@@ -4,8 +4,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Disseny: vista 3D a tota la pantalla com si fos la casa; a la dreta (a baix al mòbil) un panell
-   de mostres, com el taulell d'una botiga de paviments. Xifres i mides en lletra de cota. */
+/* Disseny: vista 3D a tota la pantalla com si fos la casa; a la dreta un panell de mostres, com el
+   taulell d'una botiga de paviments. Al mòbil, el 3D ocupa tota la pantalla i el panell és un calaix
+   que surt de l'esquerra; els terres hi són a mà com a rodonetes. Xifres i mides en lletra de cota. */
 :root{
   --fons:#eef0ee; --panell:#fafbfa; --tinta:#1c2320; --suau:#5c6862; --linia:#d6dbd7;
   --accent:#2f5d52; --sobre-accent:#ffffff; --vista:#dfe6ea; --vel:rgb(250 251 250 / .9);
@@ -31,12 +32,13 @@ button{cursor:pointer}
 .app{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr) 340px;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 #vista{position:relative;min-width:0;min-height:0;overflow:hidden;background:var(--vista)}
-#vista canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
-#vista canvas:active{cursor:grabbing}
+#vista > canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#vista > canvas:active{cursor:grabbing}
 
 /* Controls flotants sobre el 3D */
 .flota{position:absolute;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.dalt{top:12px;left:max(12px,env(safe-area-inset-left,0px));right:12px}
+.barra{top:12px;left:max(12px,env(safe-area-inset-left,0px));right:12px}
+.cim,.tanca,#tel{display:none}   /* només al mòbil */
 .boto,.xip{border:1px solid var(--linia);background:var(--vel);border-radius:999px;padding:6px 12px;
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);line-height:1.2}
 .xip{font-size:13px}
@@ -94,22 +96,58 @@ h2{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin:0;font-
 .notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--suau)}
 .peu{font-family:var(--f-cota);font-size:11px;color:var(--suau);margin:0;border-top:1px solid var(--linia);padding-top:12px}
 
-@media (max-width:760px){
-  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,58fr) minmax(0,42fr)}
-  .panell{border-left:0;border-top:1px solid var(--linia);padding-block:16px 24px;
-    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-  .ajuda{display:none}
-  .sep{display:none}
+/* Mòbil (també el mòbil de costat): el 3D a tota la pantalla, a dalt el calaix i les rodonetes,
+   a baix la manera, la planta i les vistes; el panell és un calaix que surt de l'esquerra. */
+@media (max-width:760px), (max-height:500px){
+  .app{grid-template-columns:minmax(0,1fr);padding:0}
+  .cim{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:8px;
+    top:calc(10px + env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px))}
+  .obre{display:inline-flex;align-items:center;gap:7px;padding:9px 14px;font-weight:500}
+  .obre svg{flex:none}
+  .rodones{display:inline-flex;gap:4px;padding:3px;border:1px solid var(--linia);border-radius:999px;background:var(--vel);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .rodona{width:38px;height:38px;padding:2px;border:2px solid transparent;border-radius:50%;background:none;display:block}
+  .rodona canvas{width:100%;height:100%;border-radius:50%;display:block}
+  .rodona[aria-pressed="true"]{border-color:var(--accent)}
+  .barra{top:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));
+    left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px))}
+  #vistes{flex:1 1 100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;touch-action:pan-x;
+    margin-inline:-12px;padding:2px 12px;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 24px),transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 24px),transparent)}
+  #vistes::-webkit-scrollbar{display:none}
+  #vistes .xip{flex:none}
+  #pad{bottom:calc(var(--barra,80px) + 22px + env(safe-area-inset-bottom,0px))}
+  .ajuda,.sep{display:none}
   .xip{padding:5px 10px}
+  .mode button{padding:5px 11px}
+  .panell{position:fixed;z-index:20;inset:0 auto 0 0;width:min(80vw,360px);
+    border-left:0;border-right:1px solid var(--linia);box-shadow:0 0 32px rgb(0 0 0 / .2);
+    padding-top:calc(14px + env(safe-area-inset-top,0px));padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:16px;overscroll-behavior:contain;
+    transform:translateX(-102%);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s}
+  .calaix-obert .panell{transform:none;visibility:visible;transition:transform .25s ease}
+  .tanca{display:grid;place-items:center;position:sticky;top:0;z-index:1;align-self:flex-end;flex:none;margin-bottom:-64px;
+    width:40px;height:40px;padding:0;border:1px solid var(--linia);border-radius:50%;background:var(--panell);font-size:15px}
+  .cap{padding-right:44px}
+  #tel{display:block;position:fixed;inset:0;z-index:15;background:rgb(12 16 14 / .3);opacity:0;pointer-events:none;transition:opacity .25s}
+  .calaix-obert #tel{opacity:1;pointer-events:auto}
 }
-@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}.panell,#tel{transition:none!important}}
 </style>
 
 <div class="app">
   <main id="vista" aria-label="Vista 3D de la casa">
     <div id="avis">Carregant la casa…</div>
     <div id="etiquetes" hidden></div>
-    <div class="flota dalt">
+    <div class="flota cim">
+      <button id="b-calaix" class="boto obre" type="button" aria-expanded="false" aria-controls="panell">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><path d="M6 2.75v10.5"/></svg>
+        Terra i colors
+      </button>
+      <div class="rodones" id="rodones" role="group" aria-label="Terra"></div>
+    </div>
+    <div class="flota barra">
       <div class="mode" role="group" aria-label="Manera de veure la casa">
         <button id="b-passeig" type="button" aria-pressed="true">Passejar</button>
         <button id="b-maqueta" type="button" aria-pressed="false">Maqueta</button>
@@ -127,7 +165,9 @@ h2{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin:0;font-
     </div>
   </main>
 
-  <aside class="panell">
+  <div id="tel" aria-hidden="true"></div>
+  <aside class="panell" id="panell" aria-label="Terra i colors">
+    <button class="tanca" id="b-tanca" type="button" aria-label="Tanca el panell"><svg width="14" height="14" viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12"/></svg></button>
     <header class="cap">
       <p class="ullet">Dues plantes · escala 1:50</p>
       <h1>Terres de la casa</h1>
@@ -187,6 +227,7 @@ const fmt = n => n.toLocaleString('ca', { minimumFractionDigits: 1, maximumFract
 P.forEach((p, i) => { p.i = i; p.nivell = p.nivell || 0; p.obstacles = []; for (const v of p.vistes) v.planta = i; });
 
 const avis = t => { const a = $('#avis'); a.hidden = !t; a.textContent = t || ''; };
+const MOBIL = matchMedia('(max-width:760px), (max-height:500px)');   // el mateix tall que el CSS
 
 /* ---------- Escena ---------- */
 const vista = $('#vista');
@@ -489,7 +530,7 @@ function aplicaTerres() {
   for (const h of habs) { const t = TERRES.find(t => t.id === h.terra); for (const m of h.malles) m.material = t.mat; }
   const abast = $('#abast').value, sel = habs.filter(h => dinsAbast(h, abast));
   const actual = sel.every(h => h.terra === sel[0].terra) ? sel[0].terra : null;
-  document.querySelectorAll('.mostra').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.terra === actual)));
+  document.querySelectorAll('.mostra, .rodona').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.terra === actual)));
   const per = {}; for (const h of habs) per[h.terra] = (per[h.terra] || 0) + h.area;
   const total = habs.reduce((a, h) => a + h.area, 0);
   $('#m2').innerHTML = TERRES.filter(t => per[t.id]).map(t => `<dt>${t.nom}</dt><dd>${fmt(per[t.id])} m²</dd>`).join('')
@@ -559,12 +600,27 @@ function anarA(v) {
   if (v.planta !== planta) canviaPlanta(v.planta);
   pos.x = v.pos[0]; pos.z = v.pos[1];
   yaw = Math.atan2(-(v.mira[0] - v.pos[0]), -(v.mira[1] - v.pos[1])); pitch = v.inclina ?? -0.15; objectiu = null;
-  document.querySelectorAll('#vistes .xip').forEach(b => b.setAttribute('aria-pressed', String(b.textContent === v.nom)));
+  document.querySelectorAll('#vistes .xip').forEach(b => {
+    const triat = b.textContent === v.nom;
+    b.setAttribute('aria-pressed', String(triat));
+    if (triat) centraXip(b);
+  });
   if (mode !== 'passeig') posaMode('passeig');
 }
+// Al mòbil les vistes llisquen de costat: la triada es posa al mig de la fila
+function centraXip(b) {
+  const c = $('#vistes'); if (c.scrollWidth <= c.clientWidth) return;
+  const rc = c.getBoundingClientRect(), rb = b.getBoundingClientRect();
+  c.scrollLeft += rb.left - rc.left - (rc.width - rb.width) / 2;
+}
+let lluny = 1;   // la maqueta s'allunya al mòbil
 function ajustaFov() {
-  const a = camera.aspect;
-  camera.fov = mode === 'passeig' ? clamp(2 * Math.atan(Math.tan(37.5 * Math.PI / 180) / a) * 180 / Math.PI, 55, 92) : (a < 1 ? 60 : 42);
+  const a = camera.aspect, g = Math.PI / 180;
+  // Maqueta amb la pantalla dreta: s'obre una mica l'angle i la càmera s'allunya fins que hi cap l'amplada de la casa.
+  // Al mòbil de costat, s'allunya una mica perquè les barres de dalt i de baix no tapin la casa.
+  const fovMaqueta = a < 1 ? clamp(2 * Math.atan(Math.tan(21 * g) / a) / g, 60, 75) : 42;
+  lluny = a < 1 ? Math.max(1, 0.48 / (Math.tan(fovMaqueta * g / 2) * a)) : MOBIL.matches ? 1.3 : 1;
+  camera.fov = mode === 'passeig' ? clamp(2 * Math.atan(Math.tan(37.5 * g) / a) / g, 55, 92) : fovMaqueta;
   camera.updateProjectionMatrix();
 }
 const AJUDA = {
@@ -646,6 +702,25 @@ document.querySelectorAll('#pad button').forEach(b => {
   for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => { tecles[k] = false; });
 });
 
+/* ---------- Calaix del panell (mòbil) ---------- */
+const app = $('.app');
+function calaix(obert) {
+  obert = obert && MOBIL.matches;
+  const dins = $('#panell').contains(document.activeElement);
+  app.classList.toggle('calaix-obert', obert);
+  $('#b-calaix').setAttribute('aria-expanded', String(obert));
+  vista.inert = obert;   // amb el calaix obert, la casa no respon: tocar-la el tanca
+  if (obert) $('#b-tanca').focus({ preventScroll: true });
+  else if (dins && MOBIL.matches) $('#b-calaix').focus({ preventScroll: true });
+}
+$('#b-calaix').addEventListener('click', () => calaix(true));
+$('#b-tanca').addEventListener('click', () => calaix(false));
+$('#tel').addEventListener('click', () => calaix(false));
+addEventListener('keydown', e => { if (e.key === 'Escape' && app.classList.contains('calaix-obert')) calaix(false); });
+MOBIL.addEventListener('change', () => { if (!MOBIL.matches) calaix(false); });
+// Les fletxes de caminar van just a sobre de la barra de baix, que pot ocupar una o dues files
+new ResizeObserver(() => vista.style.setProperty('--barra', `${$('.barra').offsetHeight}px`)).observe($('.barra'));
+
 /* ---------- Etiquetes de la maqueta ---------- */
 const etiquetes = habs.map(h => {
   const d = document.createElement('div'); d.className = 'etiqueta';
@@ -686,7 +761,7 @@ function bucle(t) {
     camera.position.set(pos.x, N + ULL, pos.z);
     camera.rotation.set(pitch, yaw, 0, 'YXZ');
   } else {
-    const { theta, phi, dist } = orb;
+    const { theta, phi } = orb, dist = orb.dist * lluny;
     camera.position.set(C.x + dist * Math.sin(phi) * Math.sin(theta), N + dist * Math.cos(phi), C.z + dist * Math.sin(phi) * Math.cos(theta));
     camera.lookAt(C.x, N + 0.8, C.z);
   }
@@ -706,8 +781,13 @@ async function inici() {
     tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = aniso;
     t.mat = new THREE.MeshStandardMaterial({ map: tx, roughness: 0.58, envMapIntensity: 0.55 });
   }
-  // Mostres
-  $('#mostres').innerHTML = '';
+  // Mostres del panell i rodonetes del mòbil: les dues apliquen el terra a l'abast triat
+  const posaTerra = id => {
+    const abast = $('#abast').value;
+    for (const h of habs) if (dinsAbast(h, abast)) h.terra = id;
+    aplicaTerres();
+  };
+  $('#mostres').innerHTML = ''; $('#rodones').innerHTML = '';
   for (const t of TERRES) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'mostra'; b.dataset.terra = t.id;
     const cv = document.createElement('canvas'); cv.width = 240; cv.height = 180;
@@ -715,12 +795,15 @@ async function inici() {
     const n = document.createElement('span'); n.className = 'nom'; n.textContent = t.nom;
     const d = document.createElement('span'); d.className = 'det'; d.textContent = t.det;
     b.append(cv, n, d);
-    b.addEventListener('click', () => {
-      const abast = $('#abast').value;
-      for (const h of habs) if (dinsAbast(h, abast)) h.terra = t.id;
-      aplicaTerres();
-    });
+    b.addEventListener('click', () => posaTerra(t.id));
     $('#mostres').append(b);
+    const r = document.createElement('button'); r.type = 'button'; r.className = 'rodona'; r.dataset.terra = t.id;
+    r.setAttribute('aria-label', t.nom); r.title = t.nom;
+    const rc = document.createElement('canvas'); rc.width = rc.height = 72;
+    rc.getContext('2d').drawImage(t.canvas, 0.1 * PX_M, 0, 0.6 * PX_M, 0.6 * PX_M, 0, 0, 72, 72);
+    r.append(rc);
+    r.addEventListener('click', () => posaTerra(t.id));
+    $('#rodones').append(r);
   }
   $('#abast').innerHTML = '<option value="tot">Tota la casa</option>' + P.map((p, i) =>
     `<optgroup label="${p.nom}"><option value="p${i}">Tota la ${p.nom.toLowerCase()}</option>`
