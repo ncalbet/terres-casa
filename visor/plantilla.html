@@ -1,0 +1,767 @@
+<title>Terres de la casa</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Disseny: vista 3D a tota la pantalla com si fos la casa; a la dreta (a baix al mòbil) un panell
+   de mostres, com el taulell d'una botiga de paviments. Xifres i mides en lletra de cota. */
+:root{
+  --fons:#eef0ee; --panell:#fafbfa; --tinta:#1c2320; --suau:#5c6862; --linia:#d6dbd7;
+  --accent:#2f5d52; --sobre-accent:#ffffff; --vista:#dfe6ea; --vel:rgb(250 251 250 / .9);
+  --f-text:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-cota:"IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --fons:#141917; --panell:#1b211e; --tinta:#e6ebe8; --suau:#9aa6a0; --linia:#2e3632;
+  --accent:#86c0ae; --sobre-accent:#0f201b; --vista:#1f2725; --vel:rgb(27 33 30 / .9); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --fons:#141917; --panell:#1b211e; --tinta:#e6ebe8; --suau:#9aa6a0; --linia:#2e3632;
+  --accent:#86c0ae; --sobre-accent:#0f201b; --vista:#1f2725; --vel:rgb(27 33 30 / .9); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--fons);color:var(--tinta);font:14px/1.45 var(--f-text)}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.app{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr) 340px;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#vista{position:relative;min-width:0;min-height:0;overflow:hidden;background:var(--vista)}
+#vista canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#vista canvas:active{cursor:grabbing}
+
+/* Controls flotants sobre el 3D */
+.flota{position:absolute;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.dalt{top:12px;left:max(12px,env(safe-area-inset-left,0px));right:12px}
+.boto,.xip{border:1px solid var(--linia);background:var(--vel);border-radius:999px;padding:6px 12px;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);line-height:1.2}
+.xip{font-size:13px}
+.boto[aria-pressed="true"],.xip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--sobre-accent)}
+.mode{display:inline-flex;border:1px solid var(--linia);border-radius:999px;background:var(--vel);padding:2px;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.mode button{border:0;background:transparent;border-radius:999px;padding:5px 12px;font-weight:500}
+.mode button[aria-pressed="true"]{background:var(--accent);color:var(--sobre-accent)}
+.sep{width:1px;height:22px;background:var(--linia);margin:0 2px}
+.ajuda{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;max-width:min(520px,calc(100% - 190px));
+  background:var(--vel);border:1px solid var(--linia);border-radius:var(--r);padding:6px 10px;font-size:12.5px;color:var(--suau);
+  pointer-events:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+#pad{position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:12px;display:grid;grid-template-columns:repeat(3,44px);gap:6px}
+#pad button{height:44px;border:1px solid var(--linia);background:var(--vel);border-radius:10px;font-size:16px;
+  touch-action:none;user-select:none;-webkit-user-select:none}
+#pad button:active{background:var(--accent);color:var(--sobre-accent)}
+#etiquetes{position:absolute;inset:0;pointer-events:none}
+.etiqueta{position:absolute;transform:translate(-50%,-50%);background:var(--vel);border:1px solid var(--linia);
+  border-radius:6px;padding:2px 7px;font-size:12px;white-space:nowrap;text-align:center;line-height:1.25}
+.etiqueta b{font-weight:500;display:block}
+.etiqueta span{font-family:var(--f-cota);font-size:11px;color:var(--suau)}
+#avis{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--suau)}
+
+/* Panell */
+.panell{overflow-y:auto;background:var(--panell);border-left:1px solid var(--linia);
+  padding-block:20px 28px;padding-left:20px;padding-right:20px;display:flex;flex-direction:column;gap:24px}
+.cap{display:flex;flex-direction:column;gap:4px}
+.ullet{font-family:var(--f-cota);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--suau);margin:0}
+h1{font-size:22px;line-height:1.15;margin:0;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
+.cap p{margin:0;color:var(--suau)}
+section{display:flex;flex-direction:column;gap:10px}
+h2{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin:0;font-weight:600;color:var(--suau)}
+.mostres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mostra{display:flex;flex-direction:column;align-items:stretch;gap:5px;text-align:left;padding:5px 5px 7px;min-width:0;
+  border:1px solid var(--linia);border-radius:var(--r);background:transparent}
+.mostra canvas{width:100%;max-width:100%;aspect-ratio:4/3;border-radius:5px;display:block}
+.mostra .nom{font-size:13px;font-weight:500;padding-inline:2px;line-height:1.25}
+.mostra .det{font-family:var(--f-cota);font-size:11px;color:var(--suau);padding-inline:2px}
+.mostra[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.camp{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
+.camp select{min-width:0;padding:6px 8px;border:1px solid var(--linia);border-radius:6px;background:var(--panell)}
+.superficies{display:grid;grid-template-columns:1fr auto;gap:2px 12px;margin:0;font-size:13px}
+.superficies dt{color:var(--suau)}
+.superficies dd{margin:0;font-family:var(--f-cota);font-variant-numeric:tabular-nums;text-align:right}
+.colors{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.color{width:32px;height:32px;border-radius:50%;border:1px solid var(--linia);padding:0}
+.color[aria-pressed="true"]{box-shadow:0 0 0 2px var(--panell),0 0 0 4px var(--accent)}
+.propi{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--suau)}
+.propi input{width:32px;height:32px;padding:0;border:1px solid var(--linia);border-radius:50%;background:none;overflow:hidden}
+.nom-color{font-size:13px;color:var(--suau);margin:0}
+.hora{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.hora input{width:100%;accent-color:var(--accent)}
+.hora output{font-family:var(--f-cota);font-variant-numeric:tabular-nums}
+.nota{font-size:12.5px;color:var(--suau);margin:0}
+.notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--suau)}
+.peu{font-family:var(--f-cota);font-size:11px;color:var(--suau);margin:0;border-top:1px solid var(--linia);padding-top:12px}
+
+@media (max-width:760px){
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,58fr) minmax(0,42fr)}
+  .panell{border-left:0;border-top:1px solid var(--linia);padding-block:16px 24px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .ajuda{display:none}
+  .sep{display:none}
+  .xip{padding:5px 10px}
+}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="app">
+  <main id="vista" aria-label="Vista 3D de la casa">
+    <div id="avis">Carregant la casa…</div>
+    <div id="etiquetes" hidden></div>
+    <div class="flota dalt">
+      <div class="mode" role="group" aria-label="Manera de veure la casa">
+        <button id="b-passeig" type="button" aria-pressed="true">Passejar</button>
+        <button id="b-maqueta" type="button" aria-pressed="false">Maqueta</button>
+      </div>
+      <div class="mode" id="plantes" role="group" aria-label="Planta"></div>
+      <span class="sep" aria-hidden="true"></span>
+      <div id="vistes" class="flota" style="position:static" role="group" aria-label="Anar a"></div>
+    </div>
+    <p class="ajuda" id="ajuda"></p>
+    <div id="pad" aria-label="Caminar">
+      <span></span><button type="button" data-k="f" aria-label="Endavant">▲</button><span></span>
+      <button type="button" data-k="gl" aria-label="Gira a l'esquerra">↺</button>
+      <button type="button" data-k="b" aria-label="Enrere">▼</button>
+      <button type="button" data-k="gr" aria-label="Gira a la dreta">↻</button>
+    </div>
+  </main>
+
+  <aside class="panell">
+    <header class="cap">
+      <p class="ullet">Dues plantes · escala 1:50</p>
+      <h1>Terres de la casa</h1>
+      <p>Model fet amb les mides dels plànols de l'arquitecte. Tria el terra i el color de les parets i passeja per dins.</p>
+    </header>
+
+    <section aria-labelledby="t-terra">
+      <h2 id="t-terra">Terra</h2>
+      <div class="mostres" id="mostres" role="group" aria-label="Terres disponibles"></div>
+      <div class="camp"><label for="abast">Aplica-ho a</label><select id="abast"></select></div>
+      <dl class="superficies" id="m2"></dl>
+      <p class="nota">Superfície útil aproximada de les dues plantes, sense terrasses, retalls ni sobrants.</p>
+    </section>
+
+    <section aria-labelledby="t-parets">
+      <h2 id="t-parets">Parets</h2>
+      <div class="colors" id="colors"></div>
+      <p class="nom-color" id="nom-color"></p>
+    </section>
+
+    <section aria-labelledby="t-sol">
+      <h2 id="t-sol">Llum del sol</h2>
+      <div class="hora"><input id="hora" type="range" min="8" max="19.5" step="0.25" value="10.5" aria-label="Hora del dia"><output id="hora-txt" for="hora">10:30</output></div>
+      <p class="nota">Finals de setembre, sol de veritat entrant pels finestrals. L'orientació surt del símbol del nord del plànol.</p>
+    </section>
+
+    <section class="notes" aria-labelledby="t-notes">
+      <h2 id="t-notes">Abans de decidir</h2>
+      <ul>
+        <li>El to exacte i la brillantor s'han de mirar amb la mostra física i amb llum de dia. Cada pantalla ensenya els colors a la seva manera.</li>
+        <li>Mida de la peça suposada: 20 × 120 cm, col·locada a trencajunts amb junta de 2,5 mm.</li>
+        <li>El roure fosc i el roure gris són la mateixa foto retocada, no rajoles reals.</li>
+        <li>La cuina està feta a partir del render, amb mides aproximades.</li>
+        <li>Al pis, l'alçada del sostre i la de les finestres són suposades.</li>
+      </ul>
+    </section>
+
+    <p class="peu">Font: plànols A12 i A13 (cotes). Pis a 3,00 m. Sostres a 2,70 m.</p>
+  </aside>
+</div>
+
+<img id="img-rajola" alt="" hidden src="__RAJOLA__">
+<script type="application/json" id="dades">__DADES__</script>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+const $ = s => document.querySelector(s);
+const P = JSON.parse($('#dades').textContent).plantes;
+const ULL = 1.6;            // alçada dels ulls
+const RADI = 0.2;           // radi de la persona per no travessar parets
+const PECA = { ample: 0.20, llarg: 1.20 };
+const FILES = 12, PECES = 3, PX_M = 640;
+const PX = PECES * PECA.llarg, PZ = FILES * PECA.ample;   // període de la textura en metres
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const fmt = n => n.toLocaleString('ca', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+P.forEach((p, i) => { p.i = i; p.nivell = p.nivell || 0; p.obstacles = []; for (const v of p.vistes) v.planta = i; });
+
+const avis = t => { const a = $('#avis'); a.hidden = !t; a.textContent = t || ''; };
+
+/* ---------- Escena ---------- */
+const vista = $('#vista');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+} catch (e) {
+  avis('Aquest navegador no pot mostrar 3D (WebGL). Prova-ho amb Chrome, Edge, Firefox o Safari actualitzats.');
+  throw e;
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.4;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+vista.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#dce6ee');
+const camera = new THREE.PerspectiveCamera(60, 1, 0.05, 300);
+
+// Llum ambiental: un entorn senzill (sala clara amb finestrals) per a la llum indirecta i els reflexos
+(() => {
+  const pm = new THREE.PMREMGenerator(renderer);
+  const env = new THREE.Scene();
+  env.add(new THREE.Mesh(new THREE.BoxGeometry(20, 8, 20), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.55, 0.55, 0.53), side: THREE.BackSide })));
+  const panell = (w, h, x, y, z, ry, k) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(k, k, k * 1.05) }));
+    m.position.set(x, y, z); m.rotation.y = ry; env.add(m);
+  };
+  panell(14, 5, 0, 1.5, -9.9, 0, 3.2);
+  panell(8, 4, 9.9, 1, 0, -Math.PI / 2, 1.8);
+  panell(8, 4, -9.9, 1, 2, Math.PI / 2, 1.4);
+  const sostre = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.1, 1.1, 1.1) }));
+  sostre.rotation.x = Math.PI / 2; sostre.position.y = 3.9; env.add(sostre);
+  scene.environment = pm.fromScene(env, 0.04).texture;
+})();
+scene.add(new THREE.HemisphereLight('#e8eef3', '#8d8576', 0.35));
+const sol = new THREE.DirectionalLight('#fff0dc', 2.6);
+sol.castShadow = true;
+sol.shadow.mapSize.set(2048, 2048);
+sol.shadow.bias = -0.0004;
+sol.shadow.normalBias = 0.025;
+Object.assign(sol.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 70 });
+scene.add(sol, sol.target);
+
+const mat = {
+  paret:  new THREE.MeshStandardMaterial({ color: '#efebe4', roughness: 0.92, envMapIntensity: 0.6 }),
+  tall:   new THREE.MeshStandardMaterial({ color: '#3a3e41', roughness: 1 }),
+  sostre: new THREE.MeshStandardMaterial({ color: '#f6f5f2', roughness: 0.95, envMapIntensity: 0.6 }),
+  socol:  new THREE.MeshStandardMaterial({ color: '#f4f3ef', roughness: 0.6, envMapIntensity: 0.6 }),
+  marc:   new THREE.MeshStandardMaterial({ color: '#2c2f31', roughness: 0.45, metalness: 0.25 }),
+  vidre:  new THREE.MeshStandardMaterial({ color: '#d4e6ee', roughness: 0.05, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide }),
+  moble:  new THREE.MeshStandardMaterial({ color: '#dbd6cd', roughness: 0.55, envMapIntensity: 0.7 }),
+  pedra:  new THREE.MeshStandardMaterial({ color: '#cdc8c0', roughness: 0.38, envMapIntensity: 0.8 }),
+  negre:  new THREE.MeshStandardMaterial({ color: '#1c1d1e', roughness: 0.3, envMapIntensity: 0.8 }),
+  inox:   new THREE.MeshStandardMaterial({ color: '#9a9c9d', roughness: 0.35, metalness: 0.6, envMapIntensity: 1 }),
+  fusta:  new THREE.MeshStandardMaterial({ color: '#c9a47e', roughness: 0.6, envMapIntensity: 0.6 }),
+  porta:  new THREE.MeshStandardMaterial({ color: '#4b4845', roughness: 0.5 }),
+  gespa:  new THREE.MeshStandardMaterial({ color: '#a2ad8b', roughness: 1 }),
+  vorera: new THREE.MeshStandardMaterial({ color: '#c9c6bf', roughness: 0.9 }),
+  terrassa: new THREE.MeshStandardMaterial({ color: '#bcb7ad', roughness: 0.95 }),
+};
+const matParet = [mat.paret, mat.paret, mat.tall, mat.paret, mat.paret, mat.paret];
+const matVolum = k => k === 'paret' ? matParet : k === 'mur' ? mat.paret : mat[k];
+
+// Cada planta té el seu grup (terra, parets, mobles) i el grup del sostre que la tapa
+const grups = P.map(() => new THREE.Group()), sostres = P.map(() => new THREE.Group());
+scene.add(...grups, ...sostres);
+
+// UV en metres reals: la mateixa textura continua d'una habitació a l'altra, com la rajola de debò
+function uvMon(g) {
+  const p = g.attributes.position, n = g.attributes.normal, uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i++) {
+    const ax = Math.abs(n.getX(i)), ay = Math.abs(n.getY(i)), az = Math.abs(n.getZ(i));
+    let u, v;
+    if (ay >= ax && ay >= az) { u = p.getX(i) / PX; v = p.getZ(i) / PZ; }
+    else if (ax >= az) { u = p.getZ(i) / PX; v = p.getY(i) / PZ; }
+    else { u = p.getX(i) / PX; v = p.getY(i) / PZ; }
+    uv[2 * i] = u; uv[2 * i + 1] = v;
+  }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+function caixa(r, h0, h1, m, o = {}) {
+  const w = r[2] - r[0], d = r[3] - r[1], h = h1 - h0;
+  if (w <= 0 || d <= 0 || h <= 0) return null;
+  const g = new THREE.BoxGeometry(w, h, d);
+  g.translate((r[0] + r[2]) / 2, (h0 + h1) / 2, (r[1] + r[3]) / 2);
+  if (o.mon) uvMon(g);
+  const me = new THREE.Mesh(g, m);
+  me.castShadow = o.ombra !== false; me.receiveShadow = true;
+  (o.grup || grups[0]).add(me);
+  return me;
+}
+const V2 = (x, y) => new THREE.Vector2(x, -y);
+const forma = pts => new THREE.Shape(pts.map(([x, y]) => V2(x, y)));
+const rectPts = r => [[r[0], r[1]], [r[2], r[1]], [r[2], r[3]], [r[0], r[3]]];
+const area = pts => Math.abs(pts.reduce((a, p, i) => { const q = pts[(i + 1) % pts.length]; return a + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
+
+/* ---------- Casa ---------- */
+const habs = [], terresMalles = [];
+
+// Límits de la casa (totes les plantes)
+let X0 = 1e9, Y0 = 1e9, X1 = -1e9, Y1 = -1e9;
+for (const p of P) for (const r of p.parets) { X0 = Math.min(X0, r[0]); Y0 = Math.min(Y0, r[1]); X1 = Math.max(X1, r[2]); Y1 = Math.max(Y1, r[3]); }
+const C = { x: (X0 + X1) / 2, z: (Y0 + Y1) / 2 };
+
+function construeixPlanta(p) {
+  const N = p.nivell, Hp = p.alcada, g = grups[p.i], obs = p.obstacles;
+  const cx = (r, h0, h1, m, o = {}) => caixa(r, N + h0, N + h1, m, { grup: g, ...o });
+  const terra = (pts, m) => {
+    const ge = new THREE.ShapeGeometry(forma(pts)); ge.rotateX(-Math.PI / 2); ge.translate(0, N, 0); uvMon(ge);
+    const me = new THREE.Mesh(ge, m); me.receiveShadow = true; g.add(me); return me;
+  };
+  for (const h of p.habitacions) {
+    const hab = { ...h, planta: p.i, terra: 'roure', malles: [], area: 0 };
+    for (const pts of [h.poligon, ...h.extra.map(rectPts)]) {
+      const m = terra(pts, mat.paret); m.userData.hab = hab;
+      hab.malles.push(m); terresMalles.push(m); hab.area += area(pts);
+    }
+    habs.push(hab);
+  }
+  for (const t of p.terrasses || []) terra(t.poligon, mat.terrassa);
+
+  const peu = N > 0 ? -0.02 : 0;   // al pis, la paret entra una mica dins del forjat
+  const socol = r => cx([r[0] - 0.012, r[1] - 0.012, r[2] + 0.012, r[3] + 0.012], 0, 0.07, mat.socol, { ombra: false });
+  for (const r of p.parets) { cx(r, peu, Hp, matParet); socol(r); obs.push(r); }
+  for (const o of p.obertures) {
+    if (o.tipus === 'finestra') {
+      if (o.ampit > 0) { cx(o.r, peu, o.ampit, matParet); socol(o.r); }
+      cx(o.r, o.llinda, Hp, matParet);
+      finestra(o, cx, g, N);
+      obs.push(o.r);
+    } else {
+      cx(o.r, o.llinda, Hp, matParet);
+      if (o.tipus === 'entrada') { portaEntrada(o, cx); obs.push(o.r); }
+    }
+  }
+  // Cuina, llar de foc, xemeneia i ampits
+  for (const k of [...(p.cuina || []), ...(p.volums || [])]) {
+    cx(k.r, k.h[0], k.h[1], matVolum(k.mat));
+    if (k.h[0] < 1.2) obs.push(k.r);
+  }
+  for (const b of p.baranes || []) { barana(b, cx, g, N); obs.push(b.r); }
+  if (p.forat) obs.push(p.forat);
+  if (p.escala) escala(p, cx, g);
+}
+function finestra(o, cx, g, N) {
+  const [x0, y0, x1, y1] = o.r, alX = (x1 - x0) >= (y1 - y0);
+  const t = o.vidre ?? (alX ? (y0 + y1) / 2 : (x0 + x1) / 2);
+  const s0 = alX ? x0 : y0, L = alX ? x1 - x0 : y1 - y0, fr = 0.05, ft = 0.06;
+  const barra = (a0, a1, h0, h1) => cx(alX ? [a0, t - ft / 2, a1, t + ft / 2] : [t - ft / 2, a0, t + ft / 2, a1], h0, h1, mat.marc);
+  barra(s0, s0 + L, o.ampit, o.ampit + fr);
+  barra(s0, s0 + L, o.llinda - fr, o.llinda);
+  barra(s0, s0 + fr, o.ampit, o.llinda);
+  barra(s0 + L - fr, s0 + L, o.ampit, o.llinda);
+  for (let k = 1; k < (o.fulles || 1); k++) { const m = s0 + L * k / o.fulles; barra(m - fr / 2, m + fr / 2, o.ampit, o.llinda); }
+  const v = new THREE.Mesh(new THREE.PlaneGeometry(L, o.llinda - o.ampit), mat.vidre);
+  v.position.set(alX ? s0 + L / 2 : t, N + (o.ampit + o.llinda) / 2, alX ? t : s0 + L / 2);
+  if (!alX) v.rotation.y = Math.PI / 2;
+  g.add(v);
+}
+function portaEntrada(o, cx) {
+  const [x0, y0, x1] = o.r, y = y0 + 0.04;
+  cx([x0 + 0.05, y, x1 - 0.05, y + 0.05], 0, o.llinda - 0.03, mat.porta);
+  cx([x0, y0, x0 + 0.05, y0 + 0.12], 0, o.llinda, mat.marc);
+  cx([x1 - 0.05, y0, x1, y0 + 0.12], 0, o.llinda, mat.marc);
+  cx([x0, y0, x1, y0 + 0.12], o.llinda - 0.05, o.llinda, mat.marc);
+  cx([x1 - 0.20, y - 0.04, x1 - 0.17, y], 0.95, 1.25, mat.marc);
+}
+// Barana de vidre amb passamà i perfil de baix
+function barana(b, cx, g, N) {
+  const [x0, y0, x1, y1] = b.r, alX = (x1 - x0) >= (y1 - y0), [h0, h1] = b.h;
+  const L = alX ? x1 - x0 : y1 - y0, t = alX ? (y0 + y1) / 2 : (x0 + x1) / 2, e = 0.022;
+  const v = new THREE.Mesh(new THREE.PlaneGeometry(L, h1 - h0 - 0.05), mat.vidre);
+  v.position.set(alX ? (x0 + x1) / 2 : t, N + (h0 + h1 - 0.05) / 2, alX ? t : (y0 + y1) / 2);
+  if (!alX) v.rotation.y = Math.PI / 2;
+  g.add(v);
+  const tira = alX ? [x0, t - e, x1, t + e] : [t - e, y0, t + e, y1];
+  cx(tira, h1 - 0.05, h1, mat.marc);
+  cx(tira, h0, h0 + 0.04, mat.marc);
+}
+
+// Escala: tram 1 cap a l'est, quatre graons de gir i tram 2 cap a l'oest
+function escala(p, cx, g) {
+  const E = p.escala, alt = E.alcada_planta / E.graons, esc = habs.find(h => h.id === 'esc');
+  const graoMalla = m => { if (m && esc) esc.malles.push(m); return m; };
+  const t1 = E.tram1;
+  for (let k = 1; k <= t1.esteses; k++) {
+    const x0 = t1.x0 + (k - 1) * t1.peu;
+    graoMalla(cx([x0, t1.y0, x0 + t1.peu, t1.y1], 0, k * alt, mat.paret, { mon: true }));
+  }
+  const R = E.replans, Pc = [R.x0, (t1.y1 + E.tram2.y0) / 2];
+  const cami = [[R.x0, R.y0], [R.x1, R.y0], [R.x1, R.y1], [R.x0, R.y1]];
+  const dists = [0]; for (let i = 1; i < cami.length; i++) dists.push(dists[i - 1] + Math.hypot(cami[i][0] - cami[i - 1][0], cami[i][1] - cami[i - 1][1]));
+  const Ltot = dists[dists.length - 1];
+  const punt = s => { for (let i = 1; i < cami.length; i++) if (s <= dists[i] + 1e-9) { const f = (s - dists[i - 1]) / (dists[i] - dists[i - 1]); return [cami[i - 1][0] + f * (cami[i][0] - cami[i - 1][0]), cami[i - 1][1] + f * (cami[i][1] - cami[i - 1][1])]; } return cami[cami.length - 1]; };
+  for (let i = 0; i < R.graons; i++) {
+    const s0 = Ltot * i / R.graons, s1 = Ltot * (i + 1) / R.graons, k = t1.esteses + i + 1;
+    const pts = [Pc, punt(s0), ...cami.filter((_, j) => dists[j] > s0 + 1e-9 && dists[j] < s1 - 1e-9), punt(s1)];
+    const ge = new THREE.ExtrudeGeometry(forma(pts), { depth: k * alt, bevelEnabled: false });
+    ge.rotateX(-Math.PI / 2); ge.translate(0, p.nivell, 0); uvMon(ge);
+    const m = new THREE.Mesh(ge, mat.paret); m.castShadow = m.receiveShadow = true; g.add(m); graoMalla(m);
+  }
+  const t2 = E.tram2;
+  for (let i = 0; i < t2.esteses; i++) {
+    const k = t1.esteses + R.graons + 1 + i, x1 = t2.x0 - i * t2.peu;
+    graoMalla(cx([x1 - t2.peu, t2.y0, x1, t2.y1], k * alt - 0.3, k * alt, mat.paret, { mon: true }));
+  }
+  p.obstacles.push([t1.x0, t1.y0, R.x1, t1.y1], [R.x0, R.y0, R.x1, R.y1]);
+}
+
+for (const p of P) construeixPlanta(p);
+
+// Sostres: el forjat de la planta de dalt (amb el forat de l'escala) o la coberta
+function llosa(pol, forat, y0, y1, grup) {
+  const sh = forma(pol);
+  if (forat) sh.holes.push(new THREE.Path(rectPts(forat).map(([x, y]) => V2(x, y))));
+  const ge = new THREE.ExtrudeGeometry(sh, { depth: y1 - y0, bevelEnabled: false });
+  ge.rotateX(-Math.PI / 2); ge.translate(0, y0, 0);
+  const me = new THREE.Mesh(ge, [mat.sostre, mat.paret]);
+  me.castShadow = me.receiveShadow = true; grup.add(me);
+}
+P.forEach((p, i) => {
+  const dalt = P[i + 1], y0 = p.nivell + p.alcada;
+  if (dalt) llosa(dalt.forjat, dalt.forat, y0, dalt.nivell - 0.01, sostres[i]);
+  else if (p.coberta) llosa(p.coberta, null, y0, y0 + 0.3, sostres[i]);
+});
+
+// Exterior
+{
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), mat.gespa);
+  g.rotation.x = -Math.PI / 2; g.position.set(C.x, -0.04, C.z); g.receiveShadow = true; scene.add(g);
+  const v = new THREE.Mesh(new THREE.PlaneGeometry(X1 - X0 + 2.4, Y1 - Y0 + 2.4), mat.vorera);
+  v.rotation.x = -Math.PI / 2; v.position.set(C.x, -0.02, C.z); v.receiveShadow = true; scene.add(v);
+}
+
+/* ---------- Terres ---------- */
+function atzar(seed) { return () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+// Retocs de la foto: 'gris' la passa a gris; 'fosc' la fa més fosca i una mica menys saturada
+function retoca(a, to) {
+  for (let i = 0; i < a.length; i += 4) {
+    const L = 0.2126 * a[i] + 0.7152 * a[i + 1] + 0.0722 * a[i + 2];
+    if (to === 'gris') {
+      const k = 0.86;
+      a[i] = Math.min(255, (a[i] + (L - a[i]) * k) * 1.05);
+      a[i + 1] = Math.min(255, (a[i + 1] + (L - a[i + 1]) * k) * 1.06);
+      a[i + 2] = Math.min(255, (a[i + 2] + (L - a[i + 2]) * k) * 1.09);
+    } else if (to === 'fosc') {
+      const k = 0.45, m = [0.90, 0.78, 0.66];
+      for (let c = 0; c < 3; c++) a[i + c] = 255 * Math.pow((a[i + c] + (L - a[i + c]) * k) / 255, 1.6) * m[c];
+    }
+  }
+}
+function fesTextura(img, to) {
+  const src = document.createElement('canvas'); src.width = img.naturalWidth; src.height = img.naturalHeight;
+  const sx = src.getContext('2d', { willReadFrequently: true }); sx.drawImage(img, 0, 0);
+  if (to) {
+    const id = sx.getImageData(0, 0, src.width, src.height);
+    retoca(id.data, to);
+    sx.putImageData(id, 0, 0);
+  }
+  const u = document.createElement('canvas'); u.width = u.height = 1;
+  const ux = u.getContext('2d'); ux.drawImage(src, 0, 0, 1, 1); const mitja = ux.getImageData(0, 0, 1, 1).data;
+  const W = Math.round(PX * PX_M), Hh = Math.round(PZ * PX_M);
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = Hh;
+  const c = cv.getContext('2d');
+  c.fillStyle = `rgb(${Math.round(mitja[0] * 0.6)},${Math.round(mitja[1] * 0.6)},${Math.round(mitja[2] * 0.6)})`;
+  c.fillRect(0, 0, W, Hh);
+  const pl = PECA.llarg * PX_M, pa = PECA.ample * PX_M, j = 0.0025 * PX_M;
+  const DESPL = [0, 0.42, 0.77, 0.2, 0.56, 0.9, 0.33, 0.68, 0.1, 0.48, 0.83, 0.26];
+  const r = atzar(11);
+  for (let f = 0; f < FILES; f++) {
+    const vars = Array.from({ length: PECES }, () => ({ fx: r() < 0.5, fy: r() < 0.5, to: (r() - 0.5) * 0.09 }));
+    for (let k = 0; k <= PECES; k++) {
+      const x = -DESPL[f] * pl + k * pl, y = f * pa, v = vars[k % PECES];
+      c.save(); c.beginPath(); c.rect(x + j / 2, y + j / 2, pl - j, pa - j); c.clip();
+      c.translate(x + (v.fx ? pl : 0), y + (v.fy ? pa : 0)); c.scale(v.fx ? -1 : 1, v.fy ? -1 : 1);
+      c.drawImage(src, 0, 0, pl, pa);
+      c.restore();
+      c.fillStyle = v.to > 0 ? `rgba(255,255,255,${v.to})` : `rgba(0,0,0,${-v.to})`;
+      c.fillRect(x + j / 2, y + j / 2, pl - j, pa - j);
+    }
+  }
+  return cv;
+}
+const TERRES = [
+  { id: 'roure', nom: 'Roure clar', det: 'foto', to: null },
+  { id: 'fosc', nom: 'Roure fosc', det: 'simulat', to: 'fosc' },
+  { id: 'gris', nom: 'Roure gris', det: 'simulat', to: 'gris' },
+];
+const COLORS = [
+  ['Blanc trencat', '#efebe4'], ['Blanc', '#f7f7f5'], ['Gris perla', '#dddbd6'], ['Greige', '#d3cabd'],
+  ['Sorra', '#e1d2bb'], ['Verd sàlvia', '#c5cdb9'], ['Blau boira', '#cbd4da'],
+];
+
+const dinsAbast = (h, a) => a === 'tot' || a === 'p' + h.planta || a === h.id;
+function aplicaTerres() {
+  for (const h of habs) { const t = TERRES.find(t => t.id === h.terra); for (const m of h.malles) m.material = t.mat; }
+  const abast = $('#abast').value, sel = habs.filter(h => dinsAbast(h, abast));
+  const actual = sel.every(h => h.terra === sel[0].terra) ? sel[0].terra : null;
+  document.querySelectorAll('.mostra').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.terra === actual)));
+  const per = {}; for (const h of habs) per[h.terra] = (per[h.terra] || 0) + h.area;
+  const total = habs.reduce((a, h) => a + h.area, 0);
+  $('#m2').innerHTML = TERRES.filter(t => per[t.id]).map(t => `<dt>${t.nom}</dt><dd>${fmt(per[t.id])} m²</dd>`).join('')
+    + (Object.keys(per).length > 1 ? `<dt>Total</dt><dd>${fmt(total)} m²</dd>` : '');
+}
+function triaColor(nom, hex) {
+  mat.paret.color.set(hex);
+  document.querySelectorAll('.color').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.hex === hex)));
+  $('#nom-color').textContent = nom ? `${nom} · ${hex}` : `Color propi · ${hex}`;
+  $('#color-propi').value = hex;
+}
+
+/* ---------- Sol ---------- */
+const LAT = 41.6 * Math.PI / 180;
+const NORD = [-Math.SQRT1_2, Math.SQRT1_2], EST = [-Math.SQRT1_2, -Math.SQRT1_2]; // al plànol el nord mira avall a l'esquerra
+function posaSol(hora) {
+  const hs = hora - 2 + 0.15;                  // hora oficial d'estiu → hora solar
+  const w = (hs - 12) * 15 * Math.PI / 180, dec = -0.02;
+  const sinE = Math.sin(LAT) * Math.sin(dec) + Math.cos(LAT) * Math.cos(dec) * Math.cos(w);
+  const e = Math.asin(clamp(sinE, -1, 1));
+  let A = Math.acos(clamp((Math.sin(dec) - sinE * Math.sin(LAT)) / (Math.cos(e) * Math.cos(LAT)), -1, 1));
+  if (w > 0) A = 2 * Math.PI - A;
+  const el = Math.max(e, 0.05), ca = Math.cos(A), sa = Math.sin(A);
+  const dx = NORD[0] * ca + EST[0] * sa, dz = NORD[1] * ca + EST[1] * sa;
+  const D2 = 30;
+  sol.position.set(C.x + dx * Math.cos(el) * D2, Math.sin(el) * D2, C.z + dz * Math.cos(el) * D2);
+  sol.target.position.set(C.x, 0, C.z);
+  const k = clamp(sinE / 0.3, 0, 1);
+  sol.intensity = 2.6 * k;
+  sol.color.setRGB(1, 0.86 + 0.1 * k, 0.72 + 0.2 * k);
+  const hh = Math.floor(hora), mm = Math.round((hora - hh) * 60);
+  $('#hora-txt').value = `${hh}:${String(mm).padStart(2, '0')}`;
+}
+
+/* ---------- Càmera i navegació ---------- */
+let mode = 'passeig', planta = 0;
+const pos = { x: 4, z: 3 }; let yaw = 0, pitch = -0.08, objectiu = null;
+const slug = t => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const orb = { theta: 0.3, phi: 0.62, dist: 16 };
+const tecles = {};
+const lliure = (x, z) => {
+  if (x < X0 - 6 || x > X1 + 6 || z < Y0 - 6 || z > Y1 + 6) return false;
+  for (const r of P[planta].obstacles) if (x > r[0] - RADI && x < r[2] + RADI && z > r[1] - RADI && z < r[3] + RADI) return false;
+  return true;
+};
+function mou(dx, dz) { if (lliure(pos.x + dx, pos.z)) pos.x += dx; if (lliure(pos.x, pos.z + dz)) pos.z += dz; }
+function posaVisibilitat() {
+  // Passejant es veu tota la casa; a la maqueta, la planta triada sense res a sobre
+  const tot = mode === 'passeig';
+  grups.forEach((g, i) => { g.visible = tot || i <= planta; });
+  sostres.forEach((s, i) => { s.visible = tot || i < planta; });
+}
+function pintaVistes() {
+  $('#vistes').innerHTML = '';
+  for (const v of P[planta].vistes) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'xip'; b.textContent = v.nom; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => anarA(v)); $('#vistes').append(b);
+  }
+}
+function canviaPlanta(i) {
+  planta = i; objectiu = null;
+  document.querySelectorAll('#plantes button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.p === i)));
+  pintaVistes();
+  posaVisibilitat();
+}
+function anarA(v) {
+  if (v.planta !== planta) canviaPlanta(v.planta);
+  pos.x = v.pos[0]; pos.z = v.pos[1];
+  yaw = Math.atan2(-(v.mira[0] - v.pos[0]), -(v.mira[1] - v.pos[1])); pitch = v.inclina ?? -0.15; objectiu = null;
+  document.querySelectorAll('#vistes .xip').forEach(b => b.setAttribute('aria-pressed', String(b.textContent === v.nom)));
+  if (mode !== 'passeig') posaMode('passeig');
+}
+function ajustaFov() {
+  const a = camera.aspect;
+  camera.fov = mode === 'passeig' ? clamp(2 * Math.atan(Math.tan(37.5 * Math.PI / 180) / a) * 180 / Math.PI, 55, 92) : (a < 1 ? 60 : 42);
+  camera.updateProjectionMatrix();
+}
+const AJUDA = {
+  passeig: 'Arrossega per mirar. Doble clic a terra per anar-hi. Per caminar: W A S D o les fletxes.',
+  maqueta: 'Arrossega per girar la maqueta, roda o pessic per apropar-te. Doble clic dins d\'una habitació per entrar-hi.',
+};
+function posaMode(m) {
+  mode = m;
+  posaVisibilitat();
+  $('#b-passeig').setAttribute('aria-pressed', String(m === 'passeig'));
+  $('#b-maqueta').setAttribute('aria-pressed', String(m === 'maqueta'));
+  $('#pad').hidden = m !== 'passeig';
+  $('#etiquetes').hidden = m !== 'maqueta';
+  $('#ajuda').textContent = AJUDA[m];
+  if (m === 'maqueta') document.querySelectorAll('#vistes .xip').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  ajustaFov();
+}
+
+const canvas = renderer.domElement;
+const punters = new Map(); let pessic = null, darrerTap = { t: 0, x: 0, y: 0 };
+const raig = new THREE.Raycaster(), ndc = new THREE.Vector2();
+canvas.addEventListener('pointerdown', e => {
+  canvas.setPointerCapture(e.pointerId);
+  punters.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY });
+  if (punters.size === 2) pessic = null;
+});
+canvas.addEventListener('pointermove', e => {
+  const p = punters.get(e.pointerId); if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+  if (punters.size === 2) {
+    const [a, b] = [...punters.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (pessic && mode === 'maqueta') orb.dist = clamp(orb.dist * pessic / d, 5, 35);
+    pessic = d; return;
+  }
+  if (mode === 'passeig') { yaw += dx * 0.0045; pitch = clamp(pitch + dy * 0.0045, -1.3, 1.3); }
+  else { orb.theta -= dx * 0.006; orb.phi = clamp(orb.phi - dy * 0.006, 0.12, 1.45); }
+});
+const deixa = e => {
+  const p = punters.get(e.pointerId); punters.delete(e.pointerId);
+  if (punters.size < 2) pessic = null;
+  if (!p || e.type === 'pointercancel' || Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > 8) return;
+  const ara = performance.now();
+  if (ara - darrerTap.t < 350 && Math.hypot(e.clientX - darrerTap.x, e.clientY - darrerTap.y) < 30) { tocaTerra(e); darrerTap.t = 0; }
+  else darrerTap = { t: ara, x: e.clientX, y: e.clientY };
+};
+canvas.addEventListener('pointerup', deixa);
+canvas.addEventListener('pointercancel', deixa);
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (mode === 'maqueta') orb.dist = clamp(orb.dist * Math.exp(e.deltaY * 0.001), 5, 35);
+  else { const st = clamp(-e.deltaY * 0.002, -0.3, 0.3); objectiu = null; mou(-Math.sin(yaw) * st, -Math.cos(yaw) * st); }
+}, { passive: false });
+function tocaTerra(e) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  raig.setFromCamera(ndc, camera);
+  const visibles = [...grups, ...sostres].filter(g => g.visible).flatMap(g => g.children);
+  const hit = raig.intersectObjects(visibles, false)[0];
+  if (!hit || !terresMalles.includes(hit.object) || hit.object.userData.hab.planta !== planta) return;
+  const p = hit.point;
+  if (mode === 'maqueta') {
+    if (!lliure(p.x, p.z)) return;
+    pos.x = p.x; pos.z = p.z; pitch = -0.1; posaMode('passeig'); return;
+  }
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (lliure(p.x, p.z)) { pos.x = p.x; pos.z = p.z; } }
+  else objectiu = { x: p.x, z: p.z };
+}
+const TECLES = { w: 'f', arrowup: 'f', s: 'b', arrowdown: 'b', a: 'l', d: 'r', arrowleft: 'gl', arrowright: 'gr', q: 'gl', e: 'gr', shift: 'rapid' };
+addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,select,textarea')) return;
+  const k = TECLES[e.key.toLowerCase()]; if (!k || mode !== 'passeig') return;
+  tecles[k] = true; objectiu = null; e.preventDefault();
+});
+addEventListener('keyup', e => { const k = TECLES[e.key.toLowerCase()]; if (k) tecles[k] = false; });
+addEventListener('blur', () => { for (const k in tecles) tecles[k] = false; });
+document.querySelectorAll('#pad button').forEach(b => {
+  const k = b.dataset.k;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); tecles[k] = true; objectiu = null; });
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => { tecles[k] = false; });
+});
+
+/* ---------- Etiquetes de la maqueta ---------- */
+const etiquetes = habs.map(h => {
+  const d = document.createElement('div'); d.className = 'etiqueta';
+  d.innerHTML = `<b>${h.nom}</b><span>${fmt(h.area)} m²</span>`;
+  const p = P[h.planta];
+  $('#etiquetes').append(d); return { h, d, v: new THREE.Vector3(h.etiqueta[0], p.nivell + p.alcada + 0.05, h.etiqueta[1]) };
+});
+function posaEtiquetes() {
+  const w = canvas.clientWidth, h = canvas.clientHeight, q = new THREE.Vector3();
+  for (const e of etiquetes) {
+    q.copy(e.v).project(camera);
+    const fora = e.h.planta !== planta || q.z > 1 || Math.abs(q.x) > 1.1 || Math.abs(q.y) > 1.1;
+    e.d.hidden = fora;
+    if (!fora) { e.d.style.left = `${(q.x + 1) / 2 * w}px`; e.d.style.top = `${(1 - q.y) / 2 * h}px`; }
+  }
+}
+
+/* ---------- Bucle ---------- */
+function mida() {
+  const w = vista.clientWidth, h = vista.clientHeight; if (!w || !h) return;
+  renderer.setSize(w, h, false); camera.aspect = w / h; ajustaFov();
+}
+new ResizeObserver(mida).observe(vista);
+let t0 = performance.now();
+function bucle(t) {
+  const dt = Math.min((t - t0) / 1000, 0.05); t0 = t;
+  const N = P[planta].nivell;
+  if (mode === 'passeig') {
+    const v = (tecles.rapid ? 3 : 1.5) * dt;
+    const f = (tecles.f ? 1 : 0) - (tecles.b ? 1 : 0), s = (tecles.r ? 1 : 0) - (tecles.l ? 1 : 0);
+    yaw += ((tecles.gl ? 1 : 0) - (tecles.gr ? 1 : 0)) * 1.5 * dt;
+    if (f || s) { const sy = Math.sin(yaw), cy = Math.cos(yaw); mou((-sy * f + cy * s) * v, (-cy * f - sy * s) * v); }
+    if (objectiu) {
+      const dx = objectiu.x - pos.x, dz = objectiu.z - pos.z, d = Math.hypot(dx, dz);
+      if (d < 0.05) objectiu = null;
+      else { const st = Math.min(d, 2.2 * dt), ox = pos.x, oz = pos.z; mou(dx / d * st, dz / d * st); if (Math.hypot(pos.x - ox, pos.z - oz) < st * 0.2) objectiu = null; }
+    }
+    camera.position.set(pos.x, N + ULL, pos.z);
+    camera.rotation.set(pitch, yaw, 0, 'YXZ');
+  } else {
+    const { theta, phi, dist } = orb;
+    camera.position.set(C.x + dist * Math.sin(phi) * Math.sin(theta), N + dist * Math.cos(phi), C.z + dist * Math.sin(phi) * Math.cos(theta));
+    camera.lookAt(C.x, N + 0.8, C.z);
+  }
+  renderer.render(scene, camera);
+  if (mode === 'maqueta') posaEtiquetes();
+  requestAnimationFrame(bucle);
+}
+
+/* ---------- Inici ---------- */
+async function inici() {
+  const img = $('#img-rajola');
+  try { await img.decode(); } catch (e) { avis('No s\'ha pogut carregar la foto de la rajola.'); return; }
+  const aniso = renderer.capabilities.getMaxAnisotropy();
+  for (const t of TERRES) {
+    t.canvas = fesTextura(img, t.to);
+    const tx = new THREE.CanvasTexture(t.canvas);
+    tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = aniso;
+    t.mat = new THREE.MeshStandardMaterial({ map: tx, roughness: 0.58, envMapIntensity: 0.55 });
+  }
+  // Mostres
+  $('#mostres').innerHTML = '';
+  for (const t of TERRES) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'mostra'; b.dataset.terra = t.id;
+    const cv = document.createElement('canvas'); cv.width = 240; cv.height = 180;
+    cv.getContext('2d').drawImage(t.canvas, 0, 0, 1.2 * PX_M, 0.9 * PX_M, 0, 0, 240, 180);
+    const n = document.createElement('span'); n.className = 'nom'; n.textContent = t.nom;
+    const d = document.createElement('span'); d.className = 'det'; d.textContent = t.det;
+    b.append(cv, n, d);
+    b.addEventListener('click', () => {
+      const abast = $('#abast').value;
+      for (const h of habs) if (dinsAbast(h, abast)) h.terra = t.id;
+      aplicaTerres();
+    });
+    $('#mostres').append(b);
+  }
+  $('#abast').innerHTML = '<option value="tot">Tota la casa</option>' + P.map((p, i) =>
+    `<optgroup label="${p.nom}"><option value="p${i}">Tota la ${p.nom.toLowerCase()}</option>`
+    + habs.filter(h => h.planta === i).map(h => `<option value="${h.id}">${h.nom}</option>`).join('') + '</optgroup>').join('');
+  $('#abast').addEventListener('change', aplicaTerres);
+  // Colors de paret
+  $('#colors').innerHTML = COLORS.map(([n, h]) => `<button type="button" class="color" data-hex="${h}" data-nom="${n}" style="background:${h}" aria-label="${n}" title="${n}"></button>`).join('')
+    + '<label class="propi">Un altre <input id="color-propi" type="color" value="#efebe4" aria-label="Tria un altre color de paret"></label>';
+  $('#colors').addEventListener('click', e => { const b = e.target.closest('.color'); if (b) triaColor(b.dataset.nom, b.dataset.hex); });
+  $('#color-propi').addEventListener('input', e => triaColor(null, e.target.value));
+  // Plantes
+  $('#plantes').innerHTML = P.map((p, i) => `<button type="button" data-p="${i}" aria-pressed="false" aria-label="${p.nom}">${p.curt}</button>`).join('');
+  $('#plantes').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const i = +b.dataset.p; if (i === planta) return;
+    if (mode === 'passeig') anarA(P[i].vistes[0]); else canviaPlanta(i);
+  });
+  $('#b-passeig').addEventListener('click', () => posaMode('passeig'));
+  $('#b-maqueta').addEventListener('click', () => posaMode('maqueta'));
+  $('#hora').addEventListener('input', e => posaSol(+e.target.value));
+
+  aplicaTerres();
+  triaColor(COLORS[0][0], COLORS[0][1]);
+  posaSol(+$('#hora').value);
+  canviaPlanta(0);
+  posaMode('passeig');
+  anarA(P[0].vistes[0]);
+  // Enllaços directes: #cuina, #habitacio-2… i #maqueta o #maqueta-primera
+  const llegeixHash = () => {
+    const h = location.hash.slice(1);
+    if (h.startsWith('maqueta')) {
+      const i = P.findIndex(p => h === 'maqueta-' + slug(p.curt));
+      if (i >= 0) canviaPlanta(i);
+      posaMode('maqueta'); return;
+    }
+    for (const p of P) { const v = p.vistes.find(v => slug(v.nom) === h); if (v) { anarA(v); return; } }
+  };
+  llegeixHash(); addEventListener('hashchange', llegeixHash);
+  mida();
+  avis('');
+  requestAnimationFrame(t => { t0 = t; bucle(t); });
+}
+inici();
+</script>

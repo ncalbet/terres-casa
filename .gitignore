@@ -1,0 +1,7 @@
+# Només es publiquen el visor i les eines. Tota la resta (plànols, fotos, arxiu, notes) es queda fora.
+/*
+!/.gitignore
+!/README.md
+!/visor/
+!/eines/
+__pycache__/
