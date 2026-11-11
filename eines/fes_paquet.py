@@ -10,6 +10,8 @@ Escriu paquet/casa-mobles/ i paquet/casa-mobles.zip (la carpeta paquet/ no va al
 - PER-A-CLAUDE.txt: eines/paquet/PER-A-CLAUDE.txt més les mides de la casa, generades del JSON;
 - LLEGEIX-ME.docx: eines/paquet/LLEGEIX-ME.md passat per Pandoc.
 Quan tornin mobles.txt canviat, es copia a visor/ i es torna a muntar casa.html amb construeix_visor.py.
+El paquet nou es munta apart (paquet/casa-mobles.nou) i només substitueix el d'abans si cap fitxer
+d'aquest és obert: si el Word té el LLEGEIX-ME.docx obert, avisa i no toca res.
 """
 import os
 import shutil
@@ -179,23 +181,54 @@ def pandoc():
     raise SystemExit("No trobo Pandoc")
 
 
+def obert(f):
+    """Cert si un altre programa té el fitxer obert (el Word bloqueja el .docx i no es pot esborrar)."""
+    try:
+        with open(f, "r+b"):
+            return False
+    except PermissionError:
+        return True
+
+
 def main():
     ps = plantes()
-    SORTIDA.mkdir(parents=True, exist_ok=True)
-    for f in SORTIDA.iterdir():   # es buida la carpeta (no s'esborra: pot estar oberta a l'Explorador)
-        shutil.rmtree(f) if f.is_dir() else f.unlink()
-    (SORTIDA / "casa.html").write_text(munta(extern=True), encoding="utf-8")
-    shutil.copyfile(MOBLES, SORTIDA / "mobles.txt")
-    for p in ps:
-        nom = "planol-" + p["nom"].lower().replace(" ", "-") + ".png"
-        dibuixa_planol(p, SORTIDA / nom)
-    base = (FONTS / "PER-A-CLAUDE.txt").read_text(encoding="utf-8")
-    (SORTIDA / "PER-A-CLAUDE.txt").write_text(base.rstrip() + "\n\n" + dades_casa(ps), encoding="utf-8")
-    subprocess.run([pandoc(), str(FONTS / "LLEGEIX-ME.md"), "-o", str(SORTIDA / "LLEGEIX-ME.docx")], check=True)
     zip_path = SORTIDA.with_suffix(".zip")
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-        for f in sorted(SORTIDA.iterdir()):
-            z.write(f, f"{NOM}/{f.name}")
+    # Es munta tot apart i el paquet d'abans no es toca fins que el nou és sencer i res no és obert.
+    nou = SORTIDA.with_name(NOM + ".nou")
+    nou_zip = SORTIDA.with_name(NOM + ".nou.zip")
+    if nou.exists():
+        shutil.rmtree(nou)
+    nou.mkdir(parents=True)
+    try:
+        (nou / "casa.html").write_text(munta(extern=True), encoding="utf-8")
+        shutil.copyfile(MOBLES, nou / "mobles.txt")
+        for p in ps:
+            nom = "planol-" + p["nom"].lower().replace(" ", "-") + ".png"
+            dibuixa_planol(p, nou / nom)
+        base = (FONTS / "PER-A-CLAUDE.txt").read_text(encoding="utf-8")
+        (nou / "PER-A-CLAUDE.txt").write_text(base.rstrip() + "\n\n" + dades_casa(ps), encoding="utf-8")
+        subprocess.run([pandoc(), str(FONTS / "LLEGEIX-ME.md"), "-o", str(nou / "LLEGEIX-ME.docx")], check=True)
+        with zipfile.ZipFile(nou_zip, "w", zipfile.ZIP_DEFLATED) as z:
+            for f in sorted(nou.iterdir()):
+                z.write(f, f"{NOM}/{f.name}")
+        vells = [*SORTIDA.iterdir()] if SORTIDA.exists() else []
+        oberts = [f.name for f in [*vells, zip_path] if f.is_file() and obert(f)]
+        if oberts:
+            raise SystemExit(f"No he refet el paquet: {', '.join(oberts)} és obert en un altre programa "
+                             "(potser el Word). Tanca'l i torna-ho a provar. El paquet d'abans és sencer.")
+    except BaseException:
+        shutil.rmtree(nou, ignore_errors=True)
+        nou_zip.unlink(missing_ok=True)
+        raise
+    # La carpeta no s'esborra (pot estar oberta a l'Explorador): se'n canvia el contingut.
+    SORTIDA.mkdir(parents=True, exist_ok=True)
+    for f in vells:
+        if not (nou / f.name).exists():
+            shutil.rmtree(f) if f.is_dir() else f.unlink()
+    for f in nou.iterdir():
+        os.replace(f, SORTIDA / f.name)
+    nou.rmdir()
+    os.replace(nou_zip, zip_path)
     for f in sorted(SORTIDA.iterdir()):
         print(f"  {f.name} ({f.stat().st_size / 1024:.0f} KB)")
     print(f"{zip_path} ({zip_path.stat().st_size / 1024:.0f} KB)")
