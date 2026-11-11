@@ -1,0 +1,48 @@
+mobles`
+# ==========================================================================
+#  MOBLES DE LA CASA. El visor (casa.html) llegeix aquest fitxer.
+#  Una línia = una caixa. Un moble pot ser diverses caixes.
+#
+#  nom                       x0     y0     x1     y1    des de  fins a  material
+#
+#  - x0 y0 x1 y1: el rectangle que ocupa vist des de dalt, en metres.
+#    El punt 0,0 és la cantonada de dalt a l'esquerra dels plànols:
+#    la x creix cap a la dreta i la y cap avall.
+#  - des de, fins a: alçada des del terra d'aquella planta, en metres.
+#  - material: moble, fusta, noguera, blanc, teixit, pedra, negre, inox,
+#    vidre o paret (agafa el color de les parets). Si no n'hi poses, moble.
+#    Es pot afegir un color propi, com #5b6e8c, després del material.
+#  - Les línies que comencen per # no es dibuixen: són notes.
+#  - No toquis la primera línia ni l'última: sense elles no es llegeix res.
+# ==========================================================================
+
+[Planta baixa]
+
+# Cuina (feta a partir del render, mides aproximades)
+Mobles baixos              0.30   3.25   0.95   5.56    0.00   0.88   moble
+Taulell                    0.30   3.25   0.97   5.56    0.88   0.91   pedra
+Frontal                    0.30   3.25   0.315  4.342   0.91   1.50   pedra
+Frontal                    0.30   5.541  0.315  5.56    0.91   1.50   pedra
+Mobles alts                0.30   3.25   0.65   5.56    1.50   2.30   moble
+Columna forn               0.30   5.56   0.92   6.162   0.00   2.30   moble
+Forn                       0.92   5.68   0.935  6.04    0.80   1.40   negre
+Placa                      0.40   3.60   0.90   4.15    0.91   0.916  negre
+Pica                       0.42   4.62   0.85   5.26    0.91   0.914  inox
+Columnes (plànol)          2.515  4.862  3.115  6.162   0.00   2.30   moble
+Calaix sobre columnes      2.515  4.862  3.115  6.162   2.30   2.70   paret
+Illa                       1.85   2.70   2.75   4.30    0.00   0.87   moble
+Taulell illa               1.83   2.68   2.77   4.32    0.87   0.91   pedra
+
+# Taula enganxada a l'illa
+Taula                      1.89   1.05   2.71   2.68    0.73   0.77   fusta
+Taula - pota               1.92   1.08   2.00   1.16    0.00   0.73   fusta
+Taula - pota               2.60   1.08   2.68   1.16    0.00   0.73   fusta
+Taula - pota               1.92   2.56   2.00   2.64    0.00   0.73   fusta
+Taula - pota               2.60   2.56   2.68   2.64    0.00   0.73   fusta
+
+
+[Planta primera]
+
+# Encara no hi ha mobles.
+
+`

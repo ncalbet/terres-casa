@@ -9,17 +9,17 @@
    que surt de l'esquerra; els terres hi són a mà com a rodonetes. Xifres i mides en lletra de cota. */
 :root{
   --fons:#eef0ee; --panell:#fafbfa; --tinta:#1c2320; --suau:#5c6862; --linia:#d6dbd7;
-  --accent:#2f5d52; --sobre-accent:#ffffff; --vista:#dfe6ea; --vel:rgb(250 251 250 / .9);
+  --accent:#2f5d52; --sobre-accent:#ffffff; --vista:#dfe6ea; --vel:rgb(250 251 250 / .9); --perill:#b3261e;
   --f-text:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-cota:"IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   --r:8px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --fons:#141917; --panell:#1b211e; --tinta:#e6ebe8; --suau:#9aa6a0; --linia:#2e3632;
-  --accent:#86c0ae; --sobre-accent:#0f201b; --vista:#1f2725; --vel:rgb(27 33 30 / .9); color-scheme:dark}}
+  --accent:#86c0ae; --sobre-accent:#0f201b; --vista:#1f2725; --vel:rgb(27 33 30 / .9); --perill:#f2b8b5; color-scheme:dark}}
 :root[data-theme="dark"]{
   --fons:#141917; --panell:#1b211e; --tinta:#e6ebe8; --suau:#9aa6a0; --linia:#2e3632;
-  --accent:#86c0ae; --sobre-accent:#0f201b; --vista:#1f2725; --vel:rgb(27 33 30 / .9); color-scheme:dark}
+  --accent:#86c0ae; --sobre-accent:#0f201b; --vista:#1f2725; --vel:rgb(27 33 30 / .9); --perill:#f2b8b5; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -61,6 +61,20 @@ button{cursor:pointer}
 .etiqueta b{font-weight:500;display:block}
 .etiqueta span{font-family:var(--f-cota);font-size:11px;color:var(--suau)}
 #avis{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--suau)}
+/* Paquet per editar mobles: avís quan mobles.txt té errors i caixa amb el que hi ha on fas clic */
+.errors{position:absolute;z-index:6;top:calc(22px + var(--barra,40px));left:max(12px,env(safe-area-inset-left,0px));
+  max-width:min(620px,calc(100% - 24px));max-height:45%;overflow-y:auto;background:var(--panell);color:var(--tinta);
+  border:1px solid var(--perill);border-left-width:5px;border-radius:var(--r);padding:10px 40px 10px 14px;font-size:13px;
+  box-shadow:0 4px 18px rgb(0 0 0 / .12)}
+.errors b{display:block;color:var(--perill);margin-bottom:4px}
+.errors ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.errors li.avis-lleu{color:var(--suau)}
+.errors .x,#info .x{position:absolute;top:6px;right:6px;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--suau)}
+#info{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:12px;max-width:min(560px,calc(100% - 190px));
+  background:var(--panell);border:1px solid var(--linia);border-left:5px solid var(--accent);border-radius:var(--r);
+  padding:7px 38px 7px 12px;font-size:13px;line-height:1.35}
+#info b{display:block;font-weight:600}
+#info span{font-family:var(--f-cota);font-size:12px;color:var(--suau)}
 
 /* Panell */
 .panell{overflow-y:auto;background:var(--panell);border-left:1px solid var(--linia);
@@ -118,6 +132,8 @@ h2{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin:0;font-
   #vistes::-webkit-scrollbar{display:none}
   #vistes .xip{flex:none}
   #pad{bottom:calc(var(--barra,80px) + 22px + env(safe-area-inset-bottom,0px))}
+  #info{bottom:calc(var(--barra,80px) + 22px + env(safe-area-inset-bottom,0px))}
+  .errors{top:calc(66px + env(safe-area-inset-top,0px))}
   .ajuda,.sep{display:none}
   .xip{padding:5px 10px}
   .mode button{padding:5px 11px}
@@ -157,6 +173,14 @@ h2{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin:0;font-
       <div id="vistes" class="flota" style="position:static" role="group" aria-label="Anar a"></div>
     </div>
     <p class="ajuda" id="ajuda"></p>
+    <div class="errors" id="errors" role="alert" hidden>
+      <button class="x" id="errors-tanca" type="button" aria-label="Amaga l'avís">✕</button>
+      <b id="errors-cap"></b><ul id="errors-llista"></ul>
+    </div>
+    <div id="info" role="status" hidden>
+      <button class="x" id="info-tanca" type="button" aria-label="Tanca">✕</button>
+      <b id="info-t"></b><span id="info-d"></span>
+    </div>
     <div id="pad" aria-label="Caminar">
       <span></span><button type="button" data-k="f" aria-label="Endavant">▲</button><span></span>
       <button type="button" data-k="gl" aria-label="Gira a l'esquerra">↺</button>
@@ -206,11 +230,18 @@ h2{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin:0;font-
     </section>
 
     <p class="peu">Font: plànols A12 i A13 (cotes). Pis a 3,00 m. Sostres a 2,70 m.</p>
+    <p class="peu" id="peu-mobles" hidden></p>
   </aside>
 </div>
 
 <img id="img-rajola" alt="" hidden src="__RAJOLA__">
 <script type="application/json" id="dades">__DADES__</script>
+<script>
+// Els mobles són a mobles.txt, que comença amb mobles` i acaba amb `: en carregar-se, crida aquesta funció
+window.__mobles = { text: null };
+function mobles(s) { window.__mobles.text = s.raw.join(''); }
+</script>
+__MOBLES__
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
@@ -228,6 +259,8 @@ P.forEach((p, i) => { p.i = i; p.nivell = p.nivell || 0; p.obstacles = []; for (
 
 const avis = t => { const a = $('#avis'); a.hidden = !t; a.textContent = t || ''; };
 const MOBIL = matchMedia('(max-width:760px), (max-height:500px)');   // el mateix tall que el CSS
+// Paquet per editar mobles: mobles.txt va a part, al costat de casa.html, i un clic diu on és cada cosa
+const EDICIO = !!window.__mobles?.edicio;
 
 /* ---------- Escena ---------- */
 const vista = $('#vista');
@@ -287,6 +320,9 @@ const mat = {
   negre:  new THREE.MeshStandardMaterial({ color: '#1c1d1e', roughness: 0.3, envMapIntensity: 0.8 }),
   inox:   new THREE.MeshStandardMaterial({ color: '#9a9c9d', roughness: 0.35, metalness: 0.6, envMapIntensity: 1 }),
   fusta:  new THREE.MeshStandardMaterial({ color: '#c9a47e', roughness: 0.6, envMapIntensity: 0.6 }),
+  noguera: new THREE.MeshStandardMaterial({ color: '#6e4b33', roughness: 0.55, envMapIntensity: 0.6 }),
+  blanc:  new THREE.MeshStandardMaterial({ color: '#f1f0ec', roughness: 0.4, envMapIntensity: 0.7 }),
+  teixit: new THREE.MeshStandardMaterial({ color: '#a8a39a', roughness: 0.95, envMapIntensity: 0.4 }),
   porta:  new THREE.MeshStandardMaterial({ color: '#4b4845', roughness: 0.5 }),
   gespa:  new THREE.MeshStandardMaterial({ color: '#a2ad8b', roughness: 1 }),
   vorera: new THREE.MeshStandardMaterial({ color: '#c9c6bf', roughness: 0.9 }),
@@ -294,6 +330,14 @@ const mat = {
 };
 const matParet = [mat.paret, mat.paret, mat.tall, mat.paret, mat.paret, mat.paret];
 const matVolum = k => k === 'paret' ? matParet : k === 'mur' ? mat.paret : mat[k];
+const MATS_MOBLE = ['moble', 'fusta', 'noguera', 'blanc', 'teixit', 'pedra', 'negre', 'inox', 'vidre', 'paret'];
+const matsColor = {};
+const matMoble = k => {
+  if (!k.color) return matVolum(k.mat);
+  const clau = k.mat + k.color;
+  if (!matsColor[clau]) { matsColor[clau] = (k.mat === 'paret' ? mat.moble : mat[k.mat]).clone(); matsColor[clau].color.set(k.color); }
+  return matsColor[clau];
+};
 
 // Cada planta té el seu grup (terra, parets, mobles) i el grup del sostre que la tapa
 const grups = P.map(() => new THREE.Group()), sostres = P.map(() => new THREE.Group());
@@ -367,8 +411,14 @@ function construeixPlanta(p) {
       if (o.tipus === 'entrada') { portaEntrada(o, cx); obs.push(o.r); }
     }
   }
-  // Cuina, llar de foc, xemeneia i ampits
-  for (const k of [...(p.cuina || []), ...(p.volums || [])]) {
+  // Mobles (de mobles.txt): els que arrenquen de baix fan nosa per caminar, menys les catifes
+  for (const k of p.mobles) {
+    const me = cx(k.r, k.h[0], k.h[1], matMoble(k));
+    if (me) me.userData.moble = k;
+    if (k.h[0] < 1.2 && k.h[1] > 0.1) obs.push(k.r);
+  }
+  // Llar de foc, xemeneia i ampits
+  for (const k of p.volums || []) {
     cx(k.r, k.h[0], k.h[1], matVolum(k.mat));
     if (k.h[0] < 1.2) obs.push(k.r);
   }
@@ -439,6 +489,79 @@ function escala(p, cx, g) {
     graoMalla(cx([x1 - t2.peu, t2.y0, x1, t2.y1], k * alt - 0.3, k * alt, mat.paret, { mon: true }));
   }
   p.obstacles.push([t1.x0, t1.y0, R.x1, t1.y1], [R.x0, R.y0, R.x1, R.y1]);
+}
+
+/* ---------- Mobles: lectura de mobles.txt ---------- */
+// Cada línia: nom, x0 y0 x1 y1 (metres, vist de dalt), des de i fins a (alçada) i, si cal, material i color.
+// Les línies que no s'entenen se salten i es diuen a l'avís, amb el número de línia del fitxer.
+function llegeixMobles() {
+  const M = window.__mobles || {}, errors = [], avisos = [];
+  for (const p of P) p.mobles = [];
+  if (M.text == null) {
+    return { errors, avisos, fatal: M.falta
+      ? 'No trobo el fitxer mobles.txt. Ha de ser a la mateixa carpeta que casa.html: descomprimeix tota la carpeta i obre casa.html des d\'allà.'
+      : 'mobles.txt s\'ha espatllat al principi o al final: la primera línia ha de dir mobles seguit d\'un accent obert, i l\'última només l\'accent obert. També passa si hi ha un accent obert solt pel mig. Torna a la còpia anterior o demana a Claude que ho arregli.' };
+  }
+  const norm = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const esNum = t => /^[-+]?(\d+([.,]\d*)?|[.,]\d+)$/.test(t);
+  const esColor = t => /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test(t);
+  const plantes = P.map(p => '[' + p.nom + ']').join(' o ');
+  let actual = null;
+  M.text.replace(/<\\\//g, '</').split('\n').forEach((brut, i) => {
+    const linia = i + 1, l = brut.trim();      // el text comença a la línia 1, just després de mobles`
+    if (!l || l.startsWith('#')) return;
+    const pla = l.replace(/\s+/g, ' '), cita = pla.length > 48 ? pla.slice(0, 47) + '…' : pla;
+    const error = msg => errors.push({ linia, cita, msg }), avis = msg => avisos.push({ linia, cita, msg });
+    const sec = l.match(/^\[(.+)\]$/);
+    if (sec) {
+      const n = norm(sec[1]);
+      actual = P.find(p => n === norm(p.nom) || n === norm(p.curt)) || null;
+      if (!actual) error(`no sé quina planta és. Ha de dir ${plantes}.`);
+      return;
+    }
+    if (!actual) return error(`no és dins de cap planta: més amunt hi ha d'haver ${plantes}.`);
+    const tk = l.replace(/[;\t]/g, ' ').replace(/,(?=\s|$)/g, ' ').split(/\s+/).filter(Boolean);
+    let j = tk.length; const cua = [], ns = [];
+    while (j > 0 && cua.length < 2 && !esNum(tk[j - 1])) cua.unshift(tk[--j]);
+    while (j > 0 && ns.length < 6 && esNum(tk[j - 1])) ns.unshift(parseFloat(tk[--j].replace(',', '.')));
+    if (ns.length < 6) return error(`calen 6 números (x0 y0 x1 y1 des de fins a) i n'hi ha ${ns.length}.`);
+    const nom = tk.slice(0, j).join(' ') || 'Moble sense nom';
+    let m = 'moble', color = null;
+    for (const t of cua) {
+      if (esColor(t)) color = t;
+      else if (MATS_MOBLE.includes(norm(t))) m = norm(t);
+      else avis(`no conec el material «${t}» i he posat «moble». Pot ser: ${MATS_MOBLE.join(', ')}, o un color com #5b6e8c.`);
+    }
+    const [a, b, c, d, e, f] = ns;
+    const r = [Math.min(a, c), Math.min(b, d), Math.max(a, c), Math.max(b, d)], h = [Math.min(e, f), Math.max(e, f)];
+    if (ns.some(v => Math.abs(v) > 30)) return error('hi ha un número massa gran. Les mides van en metres: 2.20, no 220.');
+    if (r[2] - r[0] < 0.004 || r[3] - r[1] < 0.004 || h[1] - h[0] < 0.002) return error('la caixa no té gruix: x0 i x1, y0 i y1, o les dues alçades són iguals.');
+    if (r[0] < X0 - 3 || r[2] > X1 + 3 || r[1] < Y0 - 3 || r[3] > Y1 + 3) return error(`queda fora de la casa. La x va de ${X0} a ${X1} i la y de ${Y0} a ${Y1}.`);
+    if (h[1] > actual.alcada + 0.3) avis(`arriba a ${h[1]} m i el sostre és a ${actual.alcada} m. Les alçades es compten des del terra de la planta.`);
+    actual.mobles.push({ nom, r, h, mat: m, color, linia, planta: actual.i });
+  });
+  return { errors, avisos };
+}
+function pintaErrors({ errors, avisos, fatal }) {
+  const llista = $('#errors-llista'), n = errors.length, a = avisos.length;
+  llista.innerHTML = '';
+  $('#errors').hidden = !fatal && !n && !a;
+  if (!fatal && !n && !a) return;
+  $('#errors-cap').textContent = fatal ? 'No es poden dibuixar els mobles'
+    : 'mobles.txt: ' + [n && `${n} ${n === 1 ? 'línia no s\'ha' : 'línies no s\'han'} pogut dibuixar`, a && `${a} ${a === 1 ? 'avís' : 'avisos'}`].filter(Boolean).join(' i ');
+  const item = (t, lleu) => { const li = document.createElement('li'); li.textContent = t; if (lleu) li.className = 'avis-lleu'; llista.append(li); };
+  if (fatal) item(fatal);
+  for (const e of errors) item(`Línia ${e.linia} («${e.cita}»): ${e.msg}`);
+  for (const e of avisos) item(`Avís, línia ${e.linia} («${e.cita}»): ${e.msg}`, true);
+}
+$('#errors-tanca').addEventListener('click', () => { $('#errors').hidden = true; });
+const resultatMobles = llegeixMobles();
+pintaErrors(resultatMobles);
+if (EDICIO) {
+  const n = P.reduce((s, p) => s + p.mobles.length, 0);
+  $('#peu-mobles').hidden = false;
+  $('#peu-mobles').textContent = resultatMobles.fatal ? 'Mobles: no s\'ha pogut llegir mobles.txt.'
+    : `Mobles: ${n} caixes llegides de mobles.txt (${P.map(p => `${p.curt.toLowerCase()} ${p.mobles.length}`).join(', ')}).`;
 }
 
 for (const p of P) construeixPlanta(p);
@@ -634,7 +757,7 @@ function posaMode(m) {
   $('#b-maqueta').setAttribute('aria-pressed', String(m === 'maqueta'));
   $('#pad').hidden = m !== 'passeig';
   $('#etiquetes').hidden = m !== 'maqueta';
-  $('#ajuda').textContent = AJUDA[m];
+  $('#ajuda').textContent = AJUDA[m] + (EDICIO ? ' Un clic diu on és i quin moble és.' : '');
   if (m === 'maqueta') document.querySelectorAll('#vistes .xip').forEach(b => b.setAttribute('aria-pressed', 'false'));
   ajustaFov();
 }
@@ -664,7 +787,7 @@ const deixa = e => {
   if (!p || e.type === 'pointercancel' || Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > 8) return;
   const ara = performance.now();
   if (ara - darrerTap.t < 350 && Math.hypot(e.clientX - darrerTap.x, e.clientY - darrerTap.y) < 30) { tocaTerra(e); darrerTap.t = 0; }
-  else darrerTap = { t: ara, x: e.clientX, y: e.clientY };
+  else { darrerTap = { t: ara, x: e.clientX, y: e.clientY }; if (EDICIO) informa(e); }
 };
 canvas.addEventListener('pointerup', deixa);
 canvas.addEventListener('pointercancel', deixa);
@@ -688,6 +811,35 @@ function tocaTerra(e) {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (lliure(p.x, p.z)) { pos.x = p.x; pos.z = p.z; } }
   else objectiu = { x: p.x, z: p.z };
 }
+// Paquet per editar: un clic diu quin moble és (i a quina línia de mobles.txt) o les coordenades del punt
+let marc = null;
+function posaInfo(t, d) {
+  $('#info').hidden = !t; $('#ajuda').hidden = !!t;
+  if (t) { $('#info-t').textContent = t; $('#info-d').textContent = d; }
+  else if (marc) { marc.removeFromParent(); marc.geometry.dispose(); marc = null; }
+}
+function informa(e) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  raig.setFromCamera(ndc, camera);
+  posaInfo(null);   // treu el requadre de l'anterior abans de mirar què hi ha sota el clic
+  const visibles = [...grups, ...sostres].filter(g => g.visible).flatMap(g => g.children).filter(o => o.isMesh);
+  const hit = raig.intersectObjects(visibles, false).find(h => h.object.userData.moble || h.object.material !== mat.vidre);
+  if (!hit) return;
+  const o = hit.object, k = o.userData.moble, hab = o.userData.hab, f = v => v.toFixed(2);
+  if (k) {
+    marc = new THREE.BoxHelper(o, 0xd2462d); o.parent.add(marc);
+    posaInfo(`${k.nom} · línia ${k.linia} de mobles.txt`,
+      `x ${f(k.r[0])} a ${f(k.r[2])} · y ${f(k.r[1])} a ${f(k.r[3])} · alçada ${f(k.h[0])} a ${f(k.h[1])} · ${k.mat}${k.color ? ' ' + k.color : ''}`);
+    return;
+  }
+  const iP = grups.indexOf(o.parent), p = hit.point;
+  const on = hab ? `${hab.nom} (${P[hab.planta].nom.toLowerCase()})` : iP < 0 ? 'Sostre'
+    : o.material === mat.terrassa ? 'Terrassa' : o.material === matParet ? 'Paret' : 'Element de la casa';
+  posaInfo(on, `x ${f(p.x)} · y ${f(p.z)}` + (hab ? '' : ` · alçada ${f(p.y - P[iP < 0 ? planta : iP].nivell)}`));
+}
+$('#info-tanca').addEventListener('click', () => posaInfo(null));
+
 const TECLES = { w: 'f', arrowup: 'f', s: 'b', arrowdown: 'b', a: 'l', d: 'r', arrowleft: 'gl', arrowright: 'gr', q: 'gl', e: 'gr', shift: 'rapid' };
 addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input,select,textarea')) return;
