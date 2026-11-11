@@ -40,6 +40,35 @@ Taula - pota               2.60   1.08   2.68   1.16    0.00   0.73   fusta
 Taula - pota               1.92   2.56   2.00   2.64    0.00   0.73   fusta
 Taula - pota               2.60   2.56   2.68   2.64    0.00   0.73   fusta
 
+# Menjador: quatre cadires a la taula, dues a cada costat
+Cadira - seient            1.39   1.23   1.84   1.68    0.41   0.45   fusta
+Cadira - respatller        1.34   1.23   1.39   1.68    0.00   0.85   fusta
+Cadira - pota              1.80   1.23   1.84   1.27    0.00   0.41   fusta
+Cadira - pota              1.80   1.64   1.84   1.68    0.00   0.41   fusta
+Cadira - seient            1.39   2.05   1.84   2.50    0.41   0.45   fusta
+Cadira - respatller        1.34   2.05   1.39   2.50    0.00   0.85   fusta
+Cadira - pota              1.80   2.05   1.84   2.09    0.00   0.41   fusta
+Cadira - pota              1.80   2.46   1.84   2.50    0.00   0.41   fusta
+Cadira - seient            2.76   1.23   3.21   1.68    0.41   0.45   fusta
+Cadira - respatller        3.21   1.23   3.26   1.68    0.00   0.85   fusta
+Cadira - pota              2.76   1.23   2.80   1.27    0.00   0.41   fusta
+Cadira - pota              2.76   1.64   2.80   1.68    0.00   0.41   fusta
+Cadira - seient            2.76   2.05   3.21   2.50    0.41   0.45   fusta
+Cadira - respatller        3.21   2.05   3.26   2.50    0.00   0.85   fusta
+Cadira - pota              2.76   2.05   2.80   2.09    0.00   0.41   fusta
+Cadira - pota              2.76   2.46   2.80   2.50    0.00   0.41   fusta
+
+# Sala: sofà de 2.20 m d'esquena a la paret de l'escala
+Sofà - seient              4.70   3.00   6.90   3.75    0.00   0.45   teixit #6d6a66
+Sofà - respatller          4.70   3.75   6.90   3.95    0.00   0.85   teixit #6d6a66
+Sofà - braç                4.70   3.00   4.88   3.75    0.45   0.65   teixit #6d6a66
+Sofà - braç                6.72   3.00   6.90   3.75    0.45   0.65   teixit #6d6a66
+
+# Habitació 1: llit de matrimoni de 1.60 x 2.00, capçal a la paret de la cuina
+Llit - capçal              0.65   6.27   2.25   6.33    0.00   1.10   noguera
+Llit - base                0.65   6.33   2.25   8.33    0.00   0.30   noguera
+Llit - matalàs             0.65   6.33   2.25   8.33    0.30   0.55   blanc
+
 
 [Planta primera]
 
