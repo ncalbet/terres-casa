@@ -1,4 +1,4 @@
-<title>Terres de la casa</title>
+<title>__TITOL__</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -83,6 +83,7 @@ button{cursor:pointer}
 .ullet{font-family:var(--f-cota);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--suau);margin:0}
 h1{font-size:22px;line-height:1.15;margin:0;font-weight:600;letter-spacing:-.01em;text-wrap:balance}
 .cap p{margin:0;color:var(--suau)}
+.cap .altra{color:var(--accent);font-weight:500;text-underline-offset:3px}
 section{display:flex;flex-direction:column;gap:10px}
 h2{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin:0;font-weight:600;color:var(--suau)}
 .mostres{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -193,9 +194,10 @@ h2{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin:0;font-
   <aside class="panell" id="panell" aria-label="Terra i colors">
     <button class="tanca" id="b-tanca" type="button" aria-label="Tanca el panell"><svg width="14" height="14" viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12"/></svg></button>
     <header class="cap">
-      <p class="ullet">Dues plantes · escala 1:50</p>
-      <h1>Terres de la casa</h1>
+      <p class="ullet">__ULLET__</p>
+      <h1>__TITOL__</h1>
       <p>Model fet amb les mides dels plànols de l'arquitecte. Tria el terra i el color de les parets i passeja per dins.</p>
+      __ALTRA__
     </header>
 
     <section aria-labelledby="t-terra">
@@ -203,7 +205,7 @@ h2{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin:0;font-
       <div class="mostres" id="mostres" role="group" aria-label="Terres disponibles"></div>
       <div class="camp"><label for="abast">Aplica-ho a</label><select id="abast"></select></div>
       <dl class="superficies" id="m2"></dl>
-      <p class="nota">Superfície útil aproximada de les dues plantes, sense terrasses, retalls ni sobrants.</p>
+      <p class="nota">__NOTA_M2__</p>
     </section>
 
     <section aria-labelledby="t-parets">
@@ -221,15 +223,11 @@ h2{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;margin:0;font-
     <section class="notes" aria-labelledby="t-notes">
       <h2 id="t-notes">Abans de decidir</h2>
       <ul>
-        <li>El to exacte i la brillantor s'han de mirar amb la mostra física i amb llum de dia. Cada pantalla ensenya els colors a la seva manera.</li>
-        <li>Mida de la peça suposada: 20 × 120 cm, col·locada a trencajunts amb junta de 2,5 mm.</li>
-        <li>El roure fosc i el roure gris són la mateixa foto retocada, no rajoles reals.</li>
-        <li>La cuina està feta a partir del render, amb mides aproximades.</li>
-        <li>Al pis, l'alçada del sostre i la de les finestres són suposades.</li>
+__NOTES__
       </ul>
     </section>
 
-    <p class="peu">Font: plànols A12 i A13 (cotes). Pis a 3,00 m. Sostres a 2,70 m.</p>
+    <p class="peu">__PEU__</p>
     <p class="peu" id="peu-mobles" hidden></p>
   </aside>
 </div>
@@ -247,7 +245,7 @@ __MOBLES__
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
 const $ = s => document.querySelector(s);
-const P = JSON.parse($('#dades').textContent).plantes;
+const DADES = JSON.parse($('#dades').textContent), P = DADES.plantes, CASA = DADES.casa || {};
 const ULL = 1.6;            // alçada dels ulls
 const RADI = 0.2;           // radi de la persona per no travessar parets
 const PECA = { ample: 0.20, llarg: 1.20 };
@@ -375,55 +373,114 @@ const area = pts => Math.abs(pts.reduce((a, p, i) => { const q = pts[(i + 1) % p
 /* ---------- Casa ---------- */
 const habs = [], terresMalles = [];
 
-// Límits de la casa (totes les plantes)
+// Un bloc és un tros de planta amb el seu propi marc: les seves x i y van girades «gir» graus (de l'eix x
+// cap a l'eix y) i el seu zero és a «origen». Serveix per a les cases que no són tota recta. La planta
+// mateixa és el bloc sense gir.
+function marcBloc(b) {
+  const a = (b.gir || 0) * Math.PI / 180, c = Math.cos(a), s = Math.sin(a), [ox, oy] = b.origen || [0, 0];
+  return {
+    a, ox, oy,
+    mon: (x, y) => [ox + c * x - s * y, oy + s * x + c * y],
+    local: (x, z) => { const dx = x - ox, dz = z - oy; return [c * dx + s * dz, -s * dx + c * dz]; },
+  };
+}
+const blocsDe = p => [{ d: p, marc: null }, ...(p.blocs || []).map(b => ({ d: b, marc: marcBloc(b) }))];
+
+// Límits de la casa (totes les plantes i tots els blocs)
 let X0 = 1e9, Y0 = 1e9, X1 = -1e9, Y1 = -1e9;
-for (const p of P) for (const r of p.parets) { X0 = Math.min(X0, r[0]); Y0 = Math.min(Y0, r[1]); X1 = Math.max(X1, r[2]); Y1 = Math.max(Y1, r[3]); }
+const estira = ([x, y]) => { X0 = Math.min(X0, x); Y0 = Math.min(Y0, y); X1 = Math.max(X1, x); Y1 = Math.max(Y1, y); };
+for (const p of P) for (const { d, marc } of blocsDe(p)) {
+  for (const r of d.parets || []) for (const q of rectPts(r)) estira(marc ? marc.mon(...q) : q);
+  for (const pol of d.parets_poligon || []) pol.forEach(estira);
+}
 const C = { x: (X0 + X1) / 2, z: (Y0 + Y1) / 2 };
+// L'ombra del sol ha de cobrir tota la casa
+{ const m = Math.max(9, Math.hypot(X1 - X0, Y1 - Y0) / 2 + 1);
+  Object.assign(sol.shadow.camera, { left: -m, right: m, top: m, bottom: -m }); sol.shadow.camera.updateProjectionMatrix(); }
+
+// Obstacles per caminar: un rectangle del marc de la planta, un rectangle d'un bloc girat o un polígon
+function topa(o, x, z) {
+  if (o.pol) return dinsPoligon(o.pol, x, z) || o.pol.some((q, i) => distSeg(x, z, q, o.pol[(i + 1) % o.pol.length]) < RADI);
+  const [u, v] = o.local ? o.local(x, z) : [x, z], r = o.r || o;
+  return u > r[0] - RADI && u < r[2] + RADI && v > r[1] - RADI && v < r[3] + RADI;
+}
+function dinsPoligon(pol, x, z) {
+  let dins = false;
+  for (let i = 0, j = pol.length - 1; i < pol.length; j = i++) {
+    const [xi, zi] = pol[i], [xj, zj] = pol[j];
+    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) dins = !dins;
+  }
+  return dins;
+}
+function distSeg(x, z, [ax, az], [bx, bz]) {
+  const dx = bx - ax, dz = bz - az, l = dx * dx + dz * dz;
+  const t = l ? clamp(((x - ax) * dx + (z - az) * dz) / l, 0, 1) : 0;
+  return Math.hypot(x - ax - t * dx, z - az - t * dz);
+}
 
 function construeixPlanta(p) {
-  const N = p.nivell, Hp = p.alcada, g = grups[p.i], obs = p.obstacles;
-  const cx = (r, h0, h1, m, o = {}) => caixa(r, N + h0, N + h1, m, { grup: g, ...o });
-  const terra = (pts, m) => {
-    const ge = new THREE.ShapeGeometry(forma(pts)); ge.rotateX(-Math.PI / 2); ge.translate(0, N, 0); uvMon(ge);
-    const me = new THREE.Mesh(ge, m); me.receiveShadow = true; g.add(me); return me;
-  };
-  for (const h of p.habitacions) {
-    const hab = { ...h, planta: p.i, terra: 'roure', malles: [], area: 0 };
-    for (const pts of [h.poligon, ...h.extra.map(rectPts)]) {
-      const m = terra(pts, mat.paret); m.userData.hab = hab;
-      hab.malles.push(m); terresMalles.push(m); hab.area += area(pts);
+  const N = p.nivell, Hp = p.alcada, g = grups[p.i];
+  const blocs = blocsDe(p).map(({ d, marc }) => {
+    let grup = g;
+    if (marc) { grup = new THREE.Group(); grup.position.set(marc.ox, 0, marc.oy); grup.rotation.y = -marc.a; g.add(grup); }
+    const obs = r => p.obstacles.push(marc ? { r, local: marc.local } : r);
+    const cx = (r, h0, h1, m, o = {}) => caixa(r, N + h0, N + h1, m, { grup, ...o });
+    return { d, marc, grup, obs, cx };
+  });
+  for (const { d, marc, grup, obs, cx } of blocs) {
+    const terra = (pts, m) => {
+      const ge = new THREE.ShapeGeometry(forma(pts)); ge.rotateX(-Math.PI / 2); ge.translate(0, N, 0); uvMon(ge);
+      const me = new THREE.Mesh(ge, m); me.receiveShadow = true; grup.add(me); return me;
+    };
+    for (const h of d.habitacions || []) {
+      const hab = { ...h, planta: p.i, terra: 'roure', malles: [], area: 0 };
+      if (marc) hab.etiqueta = marc.mon(...h.etiqueta);
+      for (const pts of [h.poligon, ...h.extra.map(rectPts)]) {
+        const m = terra(pts, mat.paret); m.userData.hab = hab;
+        hab.malles.push(m); terresMalles.push(m); hab.area += area(pts);
+      }
+      habs.push(hab);
     }
-    habs.push(hab);
-  }
-  for (const t of p.terrasses || []) terra(t.poligon, mat.terrassa);
+    for (const t of d.terrasses || []) terra(t.poligon, mat[t.mat] || mat.terrassa);
 
-  const peu = N > 0 ? -0.02 : 0;   // al pis, la paret entra una mica dins del forjat
-  const socol = r => cx([r[0] - 0.012, r[1] - 0.012, r[2] + 0.012, r[3] + 0.012], 0, 0.07, mat.socol, { ombra: false });
-  for (const r of p.parets) { cx(r, peu, Hp, matParet); socol(r); obs.push(r); }
-  for (const o of p.obertures) {
-    if (o.tipus === 'finestra') {
-      if (o.ampit > 0) { cx(o.r, peu, o.ampit, matParet); socol(o.r); }
-      cx(o.r, o.llinda, Hp, matParet);
-      finestra(o, cx, g, N);
-      obs.push(o.r);
-    } else {
-      cx(o.r, o.llinda, Hp, matParet);
-      if (o.tipus === 'entrada') { portaEntrada(o, cx); obs.push(o.r); }
+    const peu = N > 0 ? -0.02 : 0;   // al pis, la paret entra una mica dins del forjat
+    const socol = r => cx([r[0] - 0.012, r[1] - 0.012, r[2] + 0.012, r[3] + 0.012], 0, 0.07, mat.socol, { ombra: false });
+    for (const r of d.parets || []) { cx(r, peu, Hp, matParet); socol(r); obs(r); }
+    // Parets de forma lliure (on es troben dos blocs girats): en coordenades de la planta
+    for (const pol of d.parets_poligon || []) {
+      const ge = new THREE.ExtrudeGeometry(forma(pol), { depth: Hp - peu, bevelEnabled: false });
+      ge.rotateX(-Math.PI / 2); ge.translate(0, N + peu, 0);
+      const me = new THREE.Mesh(ge, [mat.tall, mat.paret]); me.castShadow = me.receiveShadow = true; g.add(me);
+      p.obstacles.push({ pol });
+    }
+    for (const o of d.obertures || []) {
+      if (o.tipus === 'finestra') {
+        if (o.ampit > 0) { cx(o.r, peu, o.ampit, matParet); socol(o.r); }
+        cx(o.r, o.llinda, Hp, matParet);
+        finestra(o, cx, grup, N);
+        obs(o.r);
+      } else {
+        cx(o.r, o.llinda, Hp, matParet);
+        if (o.tipus === 'entrada') { portaEntrada(o, cx); obs(o.r); }
+      }
     }
   }
   // Mobles (de mobles.txt): els que arrenquen de baix fan nosa per caminar, menys les catifes
+  const cx = blocs[0].cx;
   for (const k of p.mobles) {
     const me = cx(k.r, k.h[0], k.h[1], matMoble(k));
     if (me) me.userData.moble = k;
-    if (k.h[0] < 1.2 && k.h[1] > 0.1) obs.push(k.r);
+    if (k.h[0] < 1.2 && k.h[1] > 0.1) p.obstacles.push(k.r);
   }
   // Llar de foc, xemeneia i ampits
-  for (const k of p.volums || []) {
-    cx(k.r, k.h[0], k.h[1], matVolum(k.mat));
-    if (k.h[0] < 1.2) obs.push(k.r);
+  for (const { d, grup, obs, cx } of blocs) {
+    for (const k of d.volums || []) {
+      cx(k.r, k.h[0], k.h[1], matVolum(k.mat));
+      if (k.h[0] < 1.2) obs(k.r);
+    }
+    for (const b of d.baranes || []) { barana(b, cx, grup, N); obs(b.r); }
   }
-  for (const b of p.baranes || []) { barana(b, cx, g, N); obs.push(b.r); }
-  if (p.forat) obs.push(p.forat);
+  if (p.forat) p.obstacles.push(p.forat);
   if (p.escala) escala(p, cx, g);
 }
 function finestra(o, cx, g, N) {
@@ -578,7 +635,12 @@ function llosa(pol, forat, y0, y1, grup) {
 P.forEach((p, i) => {
   const dalt = P[i + 1], y0 = p.nivell + p.alcada;
   if (dalt) llosa(dalt.forjat, dalt.forat, y0, dalt.nivell - 0.01, sostres[i]);
-  else if (p.coberta) llosa(p.coberta, null, y0, y0 + 0.3, sostres[i]);
+  else for (const { d, marc } of blocsDe(p)) {
+    if (!d.coberta) continue;
+    let grup = sostres[i];
+    if (marc) { grup = new THREE.Group(); grup.position.set(marc.ox, 0, marc.oy); grup.rotation.y = -marc.a; sostres[i].add(grup); }
+    llosa(d.coberta, null, y0, y0 + 0.3, grup);
+  }
 });
 
 // Exterior
@@ -668,7 +730,8 @@ function triaColor(nom, hex) {
 
 /* ---------- Sol ---------- */
 const LAT = 41.6 * Math.PI / 180;
-const NORD = [-Math.SQRT1_2, Math.SQRT1_2], EST = [-Math.SQRT1_2, -Math.SQRT1_2]; // al plànol el nord mira avall a l'esquerra
+// Cap on mira el nord en les coordenades de la casa (a la de dues plantes, avall a l'esquerra del plànol)
+const NORD = CASA.nord || [-Math.SQRT1_2, Math.SQRT1_2], EST = [-NORD[1], NORD[0]];
 function posaSol(hora) {
   const hs = hora - 2 + 0.15;                  // hora oficial d'estiu → hora solar
   const w = (hs - 12) * 15 * Math.PI / 180, dec = -0.02;
@@ -692,11 +755,11 @@ function posaSol(hora) {
 let mode = 'passeig', planta = 0;
 const pos = { x: 4, z: 3 }; let yaw = 0, pitch = -0.08, objectiu = null;
 const slug = t => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-const orb = { theta: 0.3, phi: 0.62, dist: 16 };
+const orb = { theta: 0.3, phi: 0.62, dist: Math.max(16, Math.hypot(X1 - X0, Y1 - Y0) * 1.13) };   // les cases grans, més lluny
 const tecles = {};
 const lliure = (x, z) => {
   if (x < X0 - 6 || x > X1 + 6 || z < Y0 - 6 || z > Y1 + 6) return false;
-  for (const r of P[planta].obstacles) if (x > r[0] - RADI && x < r[2] + RADI && z > r[1] - RADI && z < r[3] + RADI) return false;
+  for (const o of P[planta].obstacles) if (topa(o, x, z)) return false;
   return true;
 };
 function mou(dx, dz) { if (lliure(pos.x + dx, pos.z)) pos.x += dx; if (lliure(pos.x, pos.z + dz)) pos.z += dz; }
@@ -957,9 +1020,9 @@ async function inici() {
     r.addEventListener('click', () => posaTerra(t.id));
     $('#rodones').append(r);
   }
-  $('#abast').innerHTML = '<option value="tot">Tota la casa</option>' + P.map((p, i) =>
-    `<optgroup label="${p.nom}"><option value="p${i}">Tota la ${p.nom.toLowerCase()}</option>`
-    + habs.filter(h => h.planta === i).map(h => `<option value="${h.id}">${h.nom}</option>`).join('') + '</optgroup>').join('');
+  const opcions = i => habs.filter(h => h.planta === i).map(h => `<option value="${h.id}">${h.nom}</option>`).join('');
+  $('#abast').innerHTML = '<option value="tot">Tota la casa</option>' + (P.length === 1 ? opcions(0) : P.map((p, i) =>
+    `<optgroup label="${p.nom}"><option value="p${i}">Tota la ${p.nom.toLowerCase()}</option>` + opcions(i) + '</optgroup>').join(''));
   $('#abast').addEventListener('change', aplicaTerres);
   // Colors de paret
   $('#colors').innerHTML = COLORS.map(([n, h]) => `<button type="button" class="color" data-hex="${h}" data-nom="${n}" style="background:${h}" aria-label="${n}" title="${n}"></button>`).join('')
@@ -968,6 +1031,7 @@ async function inici() {
   $('#color-propi').addEventListener('input', e => triaColor(null, e.target.value));
   // Plantes
   $('#plantes').innerHTML = P.map((p, i) => `<button type="button" data-p="${i}" aria-pressed="false" aria-label="${p.nom}">${p.curt}</button>`).join('');
+  if (P.length === 1) $('#plantes').hidden = true;   // una sola planta: no cal triar-la
   $('#plantes').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     const i = +b.dataset.p; if (i === planta) return;

@@ -1,0 +1,133 @@
+{
+  "nom": "Planta baixa",
+  "curt": "Baixa",
+  "nivell": 0,
+  "font": "Casa de l'esquerra de P23-32 A12 PLANTA BAIXA (COTES).pdf, escala 1:50. Marc del cos principal: origen a la cantonada exterior on es troben la façana NO i la SO; x al llarg de la façana NO (cap al NE), y cap a dins, en metres. El bloc de les habitacions 2 i 3 va recte al full: té el seu marc (origen a la seva cantonada exterior de dalt a l'esquerra, x cap a la dreta i y cap avall del full) i va girat 'gir' graus dins del marc del cos principal.",
+  "alcada": 2.7,
+  "parets": [
+    [0.0, 0.0, 4.4, 0.4],
+    [4.4, 0.0, 6.22, 0.126],
+    [6.22, 0.0, 14.912, 0.4],
+    [0.0, 0.0, 0.4, 0.8],
+    [4.1, 0.4, 4.4, 2.4],
+    [6.22, 0.126, 6.52, 1.204],
+    [6.22, 2.134, 6.52, 3.5],
+    [5.97, 3.5, 6.52, 3.8],
+    [6.52, 3.7, 7.302, 3.8],
+    [8.222, 3.7, 8.7, 3.8],
+    [8.6, 0.4, 8.7, 1.203],
+    [8.6, 2.123, 8.7, 3.8],
+    [14.512, 0.0, 14.912, 0.599],
+    [14.512, 3.545, 14.912, 4.148],
+    [14.512, 7.098, 14.912, 7.999],
+    [10.416, 7.699, 14.912, 7.999],
+    [10.416, 5.2, 10.834, 7.999],
+    [8.167, 5.2, 8.7, 5.6],
+    [5.199, 4.899, 7.017, 5.0]
+  ],
+  "parets_poligon": [
+    [[0, 2.4], [0.4, 2.4], [0.4, 2.701], [0.603, 2.886], [0.536, 2.959], [0.486, 2.913], [0.16, 3.27], [-0.135, 3.0], [0, 2.853]],
+    [[4.1, 3.3], [4.4, 3.3], [4.4, 3.5], [4.65, 3.5], [4.65, 3.8], [4.1, 3.8], [3.992, 3.7], [3.917, 3.782], [3.843, 3.715], [4.1, 3.434]],
+    [[5.199, 5.0], [5.298, 5.0], [5.298, 5.799], [5.254, 5.848], [5.181, 5.781], [5.199, 5.761]],
+    [[6.717, 4.899], [7.017, 4.899], [7.017, 7.18], [6.71, 7.516], [6.414, 7.246], [6.717, 6.915]]
+  ],
+  "obertures": [
+    {"tipus": "finestra", "nom": "Finestra habitació 1", "r": [0.0, 0.8, 0.4, 2.4], "ampit": 0.9, "llinda": 2.2, "fulles": 2},
+    {"tipus": "finestra", "nom": "Finestra de l'habitació 1 al pati", "r": [4.1, 2.4, 4.4, 3.3], "ampit": 0.9, "llinda": 2.2, "fulles": 1},
+    {"tipus": "finestra", "nom": "Finestra del safareig al pati", "r": [6.22, 1.204, 6.52, 2.134], "ampit": 0.9, "llinda": 2.2, "fulles": 1},
+    {"tipus": "finestra", "nom": "Vidriera del passadís al pati", "r": [4.65, 3.5, 5.97, 3.8], "ampit": 0.0, "llinda": 2.2, "fulles": 2},
+    {"tipus": "finestra", "nom": "Finestral sala", "r": [14.512, 0.599, 14.912, 3.545], "ampit": 0.0, "llinda": 2.5, "fulles": 2, "vidre": 14.65},
+    {"tipus": "finestra", "nom": "Finestral sala", "r": [14.512, 4.148, 14.912, 7.098], "ampit": 0.0, "llinda": 2.5, "fulles": 2, "vidre": 14.65},
+    {"tipus": "finestra", "nom": "Finestra del rebedor al porxo", "r": [8.7, 5.2, 10.416, 5.6], "ampit": 0.9, "llinda": 2.2, "fulles": 2},
+    {"tipus": "entrada", "nom": "Porta d'entrada", "r": [7.017, 5.2, 8.167, 5.6], "llinda": 2.2},
+    {"tipus": "porta", "nom": "Porta safareig", "r": [7.302, 3.7, 8.222, 3.8], "llinda": 2.1},
+    {"tipus": "porta", "nom": "Porta del safareig a la cuina", "r": [8.6, 1.203, 8.7, 2.123], "llinda": 2.1}
+  ],
+  "habitacions": [
+    {"id": "emc", "nom": "Sala, menjador i cuina", "etiqueta": [11.6, 3.6], "poligon": [[8.7, 0.4], [14.512, 0.4], [14.512, 7.699], [10.834, 7.699], [10.834, 5.2], [8.7, 5.2]], "extra": []},
+    {"id": "reb", "nom": "Rebedor i passadís", "etiqueta": [6.3, 4.35], "poligon": [[2.856, 4.944], [3.992, 3.7], [4.1, 3.8], [8.7, 3.8], [8.7, 5.2], [7.017, 5.2], [7.017, 4.899], [5.199, 4.899], [5.199, 5.761], [5.181, 5.781], [4.54, 6.482]], "extra": [[7.302, 3.7, 8.222, 3.8], [7.017, 5.2, 8.167, 5.24]]},
+    {"id": "saf", "nom": "Safareig", "etiqueta": [7.55, 2.0], "poligon": [[6.52, 0.4], [8.6, 0.4], [8.6, 3.7], [6.52, 3.7]], "extra": [[8.6, 1.203, 8.7, 2.123]]},
+    {"id": "h1", "nom": "Habitació 1", "etiqueta": [2.2, 1.6], "poligon": [[0.4, 0.4], [4.1, 0.4], [4.1, 3.434], [2.782, 4.876], [0.4, 2.701]], "extra": []},
+    {"id": "bany1", "nom": "Bany 1", "etiqueta": [6.0, 6.0], "poligon": [[5.298, 5.0], [6.717, 5.0], [6.717, 6.915], [6.414, 7.246], [5.942, 7.763], [4.613, 6.549], [5.254, 5.848], [5.298, 5.799]], "extra": []}
+  ],
+  "terrasses": [
+    {"nom": "Pati", "mat": "gespa", "poligon": [[4.4, 0.126], [6.22, 0.126], [6.22, 3.5], [4.4, 3.5]]}
+  ],
+  "volums": [
+    {"nom": "Llar de foc", "r": [11.683, 7.199, 12.683, 7.699], "h": [0, 2.7], "mat": "paret"}
+  ],
+  "coberta": [
+    [0, 0],
+    [4.4, 0],
+    [4.4, 3.5],
+    [6.22, 3.5],
+    [6.22, 0],
+    [14.912, 0],
+    [14.912, 7.999],
+    [10.416, 7.999],
+    [10.416, 5.6],
+    [7.017, 5.6],
+    [7.017, 7.18],
+    [6.71, 7.516],
+    [6.237, 8.033],
+    [0.258, 2.571],
+    [-0.001, 2.853]
+  ],
+  "blocs": [
+    {
+      "nom": "Habitacions 2 i 3",
+      "gir": 42.41,
+      "origen": [0.258, 2.571],
+      "parets": [
+        [1.288, 0.0, 3.62, 0.099],
+        [4.53, 0.0, 4.8, 0.099],
+        [5.719, 0.0, 7.699, 0.099],
+        [5.8, -0.03, 5.899, 0.0],
+        [3.419, -0.65, 3.519, 0.0],
+        [0.0, 1.482, 0.4, 3.113],
+        [0.0, 2.7, 2.931, 3.12],
+        [3.83, 2.7, 4.694, 3.12],
+        [4.694, 2.8, 8.099, 3.127],
+        [7.699, -0.099, 8.099, 1.2],
+        [7.699, 2.1, 8.099, 3.127],
+        [1.839, 0.099, 1.94, 2.7],
+        [4.594, 0.099, 4.694, 2.8]
+      ],
+      "obertures": [
+        {"tipus": "finestra", "nom": "Finestra bany 2", "r": [0.0, 0.582, 0.4, 1.482], "ampit": 1.4, "llinda": 2.1, "fulles": 1},
+        {"tipus": "finestra", "nom": "Finestra habitació 2", "r": [2.931, 2.7, 3.83, 3.12], "ampit": 0.9, "llinda": 2.2, "fulles": 2},
+        {"tipus": "finestra", "nom": "Finestra habitació 3", "r": [7.699, 1.2, 8.099, 2.1], "ampit": 0.9, "llinda": 2.2, "fulles": 2},
+        {"tipus": "finestra", "nom": "Finestra bany 1", "r": [7.699, -0.7, 8.099, -0.099], "ampit": 1.4, "llinda": 2.1, "fulles": 1},
+        {"tipus": "porta", "nom": "Porta habitació 1", "r": [3.419, -1.573, 3.519, -0.65], "llinda": 2.1},
+        {"tipus": "porta", "nom": "Porta bany 2", "r": [0.468, 0.0, 1.288, 0.099], "llinda": 2.1},
+        {"tipus": "porta", "nom": "Porta habitació 2", "r": [3.62, 0.0, 4.53, 0.099], "llinda": 2.1},
+        {"tipus": "porta", "nom": "Porta habitació 3", "r": [4.8, 0.0, 5.719, 0.099], "llinda": 2.1},
+        {"tipus": "porta", "nom": "Porta bany 1", "r": [5.8, -0.95, 5.899, -0.03], "llinda": 2.1}
+      ],
+      "habitacions": [
+        {"id": "bany2", "nom": "Bany 2", "etiqueta": [1.1, 1.5], "poligon": [[0.4, 0.099], [1.839, 0.099], [1.839, 2.7], [0.4, 2.7]], "extra": [[0.468, 0.0, 1.288, 0.099]]},
+        {"id": "h2", "nom": "Habitació 2", "etiqueta": [3.25, 1.4], "poligon": [[1.94, 0.099], [4.594, 0.099], [4.594, 2.7], [1.94, 2.7]], "extra": [[3.62, 0.0, 4.53, 0.099]]},
+        {"id": "h3", "nom": "Habitació 3", "etiqueta": [6.2, 1.45], "poligon": [[4.694, 0.099], [7.699, 0.099], [7.699, 2.8], [4.694, 2.8]], "extra": [[4.8, 0.0, 5.719, 0.099]]}
+      ],
+      "coberta": [
+        [0, 0],
+        [8.099, 0],
+        [8.099, 3.127],
+        [0, 3.113]
+      ]
+    }
+  ],
+  "vistes": [
+    {"nom": "Sala", "pos": [9.4, 1.6], "mira": [14.5, 6.2], "inclina": -0.2},
+    {"nom": "Cuina", "pos": [13.8, 6.6], "mira": [9.4, 0.8], "inclina": -0.22},
+    {"nom": "Entrada", "pos": [7.6, 5.0], "mira": [12.5, 2.2]},
+    {"nom": "Passadís", "pos": [8.3, 4.35], "mira": [4.4, 4.0]},
+    {"nom": "Pati", "pos": [4.95, 4.6], "mira": [5.7, 0.4], "inclina": -0.1},
+    {"nom": "Safareig", "pos": [7.8, 3.4], "mira": [6.8, 0.6]},
+    {"nom": "Habitació 1", "pos": [3.7, 3.0], "mira": [0.4, 0.6]},
+    {"nom": "Bany 1", "pos": [4.545, 5.81], "mira": [6.213, 7.468]},
+    {"nom": "Habitació 2", "pos": [3.049, 5.594], "mira": [-0.053, 5.876]},
+    {"nom": "Habitació 3", "pos": [3.898, 6.37], "mira": [4.085, 9.723]},
+    {"nom": "Bany 2", "pos": [1.226, 2.845], "mira": [-0.758, 5.165], "inclina": -0.3}
+  ]
+}
