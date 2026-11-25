@@ -598,6 +598,8 @@ function construeixPlanta(p) {
     for (const h of d.habitacions || []) {
       const hab = { ...h, planta: p.i, terra: 'roure', malles: [], area: 0 };
       if (marc) hab.etiqueta = marc.mon(...h.etiqueta);
+      hab.polMon = marc ? h.poligon.map(q => marc.mon(...q)) : h.poligon;   // per mirar-la des de dalt a la maqueta
+      hab.gir = marc ? marc.a : 0;
       for (const pts of [h.poligon, ...h.extra.map(rectPts)]) {
         const m = terra(pts, mat.paret); m.userData.hab = hab;
         hab.malles.push(m); terresMalles.push(m); hab.area += area(pts);
@@ -918,7 +920,10 @@ function posaSol(hora) {
 let mode = 'passeig', planta = 0;
 const pos = { x: 4, z: 3 }; let yaw = 0, pitch = -0.08, objectiu = null;
 const slug = t => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-const orb = { theta: 0.3, phi: 0.62, dist: Math.max(16, Math.hypot(X1 - X0, Y1 - Y0) * 1.13) };   // les cases grans, més lluny
+// Maqueta: la càmera gira al voltant d'un punt (x, z) que es pot desplaçar; «desti» és on va quan es tria una sala
+const ORB0 = { theta: 0.3, phi: 0.62, dist: Math.max(16, Math.hypot(X1 - X0, Y1 - Y0) * 1.13), x: C.x, z: C.z };   // les cases grans, més lluny
+const orb = { ...ORB0 };
+let desti = null, triadaMaqueta = 'casa';
 const tecles = {};
 const lliure = (x, z) => {
   if (x < X0 - 6 || x > X1 + 6 || z < Y0 - 6 || z > Y1 + 6) return false;
@@ -932,29 +937,79 @@ function posaVisibilitat() {
   grups.forEach((g, i) => { g.visible = tot || i <= planta; });
   sostres.forEach((s, i) => { s.visible = tot || i < planta; });
 }
+// Passejant, els botons són les vistes de la planta; a la maqueta, «Tota la casa» i les sales, que es miren des de dalt
 function pintaVistes() {
   $('#vistes').innerHTML = '';
-  for (const v of P[planta].vistes) {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'xip'; b.textContent = v.nom; b.setAttribute('aria-pressed', 'false');
-    b.addEventListener('click', () => anarA(v)); $('#vistes').append(b);
-  }
+  const xip = (nom, clau, fn) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'xip'; b.textContent = nom; b.dataset.clau = clau;
+    b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', fn); $('#vistes').append(b);
+  };
+  if (mode === 'maqueta') {
+    xip('Tota la casa', 'casa', () => vistaCasa());
+    for (const h of habs) if (h.planta === planta) xip(h.nom, h.id, () => vistaSala(h));
+    marcaXip(triadaMaqueta);
+  } else for (const v of P[planta].vistes) xip(v.nom, v.nom, () => anarA(v));
+}
+function marcaXip(clau) {
+  document.querySelectorAll('#vistes .xip').forEach(b => {
+    const triat = b.dataset.clau === clau;
+    b.setAttribute('aria-pressed', String(triat));
+    if (triat) centraXip(b);
+  });
 }
 function canviaPlanta(i) {
   planta = i; objectiu = null;
   document.querySelectorAll('#plantes button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.p === i)));
+  if (mode === 'maqueta' && triadaMaqueta !== 'casa') triadaMaqueta = null;   // la sala era de l'altra planta
   pintaVistes();
   posaVisibilitat();
 }
 function anarA(v) {
   if (v.planta !== planta) canviaPlanta(v.planta);
+  if (mode !== 'passeig') posaMode('passeig');
   pos.x = v.pos[0]; pos.z = v.pos[1];
   yaw = Math.atan2(-(v.mira[0] - v.pos[0]), -(v.mira[1] - v.pos[1])); pitch = v.inclina ?? -0.15; objectiu = null;
-  document.querySelectorAll('#vistes .xip').forEach(b => {
-    const triat = b.textContent === v.nom;
-    b.setAttribute('aria-pressed', String(triat));
-    if (triat) centraXip(b);
-  });
-  if (mode !== 'passeig') posaMode('passeig');
+  marcaXip(v.nom);
+}
+// Maqueta: tota la casa com al principi, o una sala vista de dalt i girada perquè es llegeixi com el plànol
+const quiet = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function volaA(d, ara) {
+  if (ara || quiet()) { Object.assign(orb, d); desti = null; }
+  else {
+    // el gir més curt
+    const t = orb.theta + Math.atan2(Math.sin(d.theta - orb.theta), Math.cos(d.theta - orb.theta));
+    desti = { ...d, theta: t };
+  }
+}
+function vistaCasa(ara) {
+  triadaMaqueta = 'casa'; marcaXip('casa');
+  volaA({ ...ORB0 }, ara);
+}
+function vistaSala(h, ara) {
+  if (h.planta !== planta) canviaPlanta(h.planta);
+  triadaMaqueta = h.id; marcaXip(h.id);
+  const theta = -(h.gir || 0), dr = [Math.cos(theta), -Math.sin(theta)], dv = [Math.sin(theta), Math.cos(theta)];
+  // Mida de la sala tal com es veurà a la pantalla (amplada i fondària)
+  let a0 = 1e9, a1 = -1e9, b0 = 1e9, b1 = -1e9;
+  for (const [x, y] of h.polMon) {
+    const a = x * dr[0] + y * dr[1], b = x * dv[0] + y * dv[1];
+    a0 = Math.min(a0, a); a1 = Math.max(a1, a); b0 = Math.min(b0, b); b1 = Math.max(b1, b);
+  }
+  const am = (a0 + a1) / 2, bm = (b0 + b1) / 2, g = Math.PI / 180;
+  const fov = camera.aspect < 1 ? clamp(2 * Math.atan(Math.tan(21 * g) / camera.aspect) / g, 60, 75) : 42;
+  const tv = Math.tan(fov * g / 2), th = tv * camera.aspect, marge = MOBIL.matches ? 1.5 : 1.2;
+  const lluny_ = camera.aspect < 1 ? Math.max(1, 0.48 / (tv * camera.aspect)) : MOBIL.matches ? 1.3 : 1;
+  const cal = Math.max((b1 - b0) / 2 / tv, (a1 - a0) / 2 / th) * marge + P[h.planta].alcada - 0.8;
+  volaA({ theta, phi: 0.02, dist: clamp(cal / lluny_, 3, 35), x: am * dr[0] + bm * dv[0], z: am * dr[1] + bm * dv[1] }, ara);
+}
+// Desplaçar la maqueta: el punt que es mira segueix el dit o el ratolí
+function desplaca(dx, dy) {
+  desti = null;
+  const k = 2 * orb.dist * lluny * Math.tan(camera.fov * Math.PI / 360) / Math.max(1, canvas.clientHeight);
+  const s = Math.sin(orb.theta), c = Math.cos(orb.theta);
+  orb.x = clamp(orb.x - (c * dx + s * dy) * k, X0 - 3, X1 + 3);
+  orb.z = clamp(orb.z - (-s * dx + c * dy) * k, Y0 - 3, Y1 + 3);
+  if (triadaMaqueta) { triadaMaqueta = null; marcaXip(null); }
 }
 // Al mòbil les vistes llisquen de costat: la triada es posa al mig de la fila
 function centraXip(b) {
@@ -974,9 +1029,10 @@ function ajustaFov() {
 }
 const AJUDA = {
   passeig: 'Arrossega per mirar. Doble clic a terra per anar-hi. Per caminar: W A S D o les fletxes.',
-  maqueta: 'Arrossega per girar la maqueta, roda o pessic per apropar-te. Doble clic dins d\'una habitació per entrar-hi.',
+  maqueta: 'Arrossega per girar la maqueta, roda o pessic per apropar-te. Per desplaçar-la, botó dret, Maj + arrossegar o dos dits. Doble clic dins d\'una habitació per entrar-hi.',
 };
 function posaMode(m) {
+  const canvi = m !== mode;
   mode = m;
   posaVisibilitat();
   $('#b-passeig').setAttribute('aria-pressed', String(m === 'passeig'));
@@ -984,32 +1040,39 @@ function posaMode(m) {
   $('#pad').hidden = m !== 'passeig';
   $('#etiquetes').hidden = m !== 'maqueta';
   $('#ajuda').textContent = AJUDA[m] + (EDICIO ? ' Un clic diu on és i quin moble és.' : '');
-  if (m === 'maqueta') document.querySelectorAll('#vistes .xip').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  if (canvi) pintaVistes();
   ajustaFov();
 }
 
 const canvas = renderer.domElement;
-const punters = new Map(); let pessic = null, darrerTap = { t: 0, x: 0, y: 0 };
+const punters = new Map(); let pessic = null, mig = null, darrerTap = { t: 0, x: 0, y: 0 };
 const raig = new THREE.Raycaster(), ndc = new THREE.Vector2();
+// Totes les malles de les plantes visibles, també les dels blocs girats (que són un grup dins del grup)
+const mallesVisibles = () => [...grups, ...sostres].filter(g => g.visible).flatMap(g => { const r = []; g.traverse(o => { if (o.isMesh) r.push(o); }); return r; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('pointerdown', e => {
   canvas.setPointerCapture(e.pointerId);
-  punters.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY });
-  if (punters.size === 2) pessic = null;
+  punters.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, mou: e.button === 2 || e.shiftKey });
+  if (punters.size === 2) pessic = mig = null;
+  desti = null;
 });
 canvas.addEventListener('pointermove', e => {
   const p = punters.get(e.pointerId); if (!p) return;
   const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
   if (punters.size === 2) {
-    const [a, b] = [...punters.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
-    if (pessic && mode === 'maqueta') orb.dist = clamp(orb.dist * pessic / d, 5, 35);
-    pessic = d; return;
+    const [a, b] = [...punters.values()], d = Math.hypot(a.x - b.x, a.y - b.y), m = [(a.x + b.x) / 2, (a.y + b.y) / 2];
+    if (pessic && mode === 'maqueta') orb.dist = clamp(orb.dist * pessic / d, 3, 35);
+    if (mig && mode === 'maqueta') desplaca(m[0] - mig[0], m[1] - mig[1]);
+    pessic = d; mig = m; return;
   }
   if (mode === 'passeig') { yaw += dx * 0.0045; pitch = clamp(pitch + dy * 0.0045, -1.3, 1.3); }
-  else { orb.theta -= dx * 0.006; orb.phi = clamp(orb.phi - dy * 0.006, 0.12, 1.45); }
+  else if (p.mou) desplaca(dx, dy);
+  else { orb.theta -= dx * 0.006; orb.phi = clamp(orb.phi - dy * 0.006, 0.02, 1.45); }
 });
 const deixa = e => {
   const p = punters.get(e.pointerId); punters.delete(e.pointerId);
-  if (punters.size < 2) pessic = null;
+  if (punters.size < 2) pessic = mig = null;
+  if (p && p.mou) return;
   if (!p || e.type === 'pointercancel' || Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > 8) return;
   const ara = performance.now();
   if (ara - darrerTap.t < 350 && Math.hypot(e.clientX - darrerTap.x, e.clientY - darrerTap.y) < 30) { tocaTerra(e); darrerTap.t = 0; }
@@ -1019,15 +1082,14 @@ canvas.addEventListener('pointerup', deixa);
 canvas.addEventListener('pointercancel', deixa);
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
-  if (mode === 'maqueta') orb.dist = clamp(orb.dist * Math.exp(e.deltaY * 0.001), 5, 35);
+  if (mode === 'maqueta') { desti = null; orb.dist = clamp(orb.dist * Math.exp(e.deltaY * 0.001), 3, 35); }
   else { const st = clamp(-e.deltaY * 0.002, -0.3, 0.3); objectiu = null; mou(-Math.sin(yaw) * st, -Math.cos(yaw) * st); }
 }, { passive: false });
 function tocaTerra(e) {
   const r = canvas.getBoundingClientRect();
   ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   raig.setFromCamera(ndc, camera);
-  const visibles = [...grups, ...sostres].filter(g => g.visible).flatMap(g => g.children);
-  const hit = raig.intersectObjects(visibles, false)[0];
+  const hit = raig.intersectObjects(mallesVisibles(), false)[0];
   if (!hit || !terresMalles.includes(hit.object) || hit.object.userData.hab.planta !== planta) return;
   const p = hit.point;
   if (mode === 'maqueta') {
@@ -1049,17 +1111,17 @@ function informa(e) {
   ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   raig.setFromCamera(ndc, camera);
   posaInfo(null);   // treu el requadre de l'anterior abans de mirar què hi ha sota el clic
-  const visibles = [...grups, ...sostres].filter(g => g.visible).flatMap(g => g.children).filter(o => o.isMesh);
-  const hit = raig.intersectObjects(visibles, false).find(h => h.object.userData.moble || h.object.material !== mat.vidre);
+  const hit = raig.intersectObjects(mallesVisibles(), false).find(h => h.object.userData.moble || h.object.material !== mat.vidre);
   if (!hit) return;
   const o = hit.object, k = o.userData.moble, hab = o.userData.hab, f = v => v.toFixed(2);
+  let arrel = o; while (arrel.parent && arrel.parent !== scene) arrel = arrel.parent;   // el grup de la planta, encara que sigui un bloc girat
   if (k) {
     marc = new THREE.BoxHelper(o, 0xd2462d); o.parent.add(marc);
     posaInfo(`${k.nom} · línia ${k.linia} de mobles.txt`,
       `x ${f(k.r[0])} a ${f(k.r[2])} · y ${f(k.r[1])} a ${f(k.r[3])} · alçada ${f(k.h[0])} a ${f(k.h[1])} · ${k.mat}${k.color ? ' ' + k.color : ''}`);
     return;
   }
-  const iP = grups.indexOf(o.parent), p = hit.point;
+  const iP = grups.indexOf(arrel), p = hit.point;
   const on = hab ? `${hab.nom} (${P[hab.planta].nom.toLowerCase()})` : iP < 0 ? 'Sostre'
     : o.material === mat.terrassa ? 'Terrassa' : o.material === matParet ? 'Paret' : 'Element de la casa';
   posaInfo(on, `x ${f(p.x)} · y ${f(p.z)}` + (hab ? '' : ` · alçada ${f(p.y - P[iP < 0 ? planta : iP].nivell)}`));
@@ -1139,9 +1201,15 @@ function bucle(t) {
     camera.position.set(pos.x, N + ULL, pos.z);
     camera.rotation.set(pitch, yaw, 0, 'YXZ');
   } else {
-    const { theta, phi } = orb, dist = orb.dist * lluny;
-    camera.position.set(C.x + dist * Math.sin(phi) * Math.sin(theta), N + dist * Math.cos(phi), C.z + dist * Math.sin(phi) * Math.cos(theta));
-    camera.lookAt(C.x, N + 0.8, C.z);
+    if (desti) {   // anar cap a la sala triada (o tota la casa) a poc a poc
+      const k = 1 - Math.exp(-dt * 6);
+      let a = 0;
+      for (const c of ['theta', 'phi', 'dist', 'x', 'z']) { orb[c] += (desti[c] - orb[c]) * k; a = Math.max(a, Math.abs(desti[c] - orb[c])); }
+      if (a < 0.002) { Object.assign(orb, desti); desti = null; }
+    }
+    const { theta, phi, x, z } = orb, dist = orb.dist * lluny;
+    camera.position.set(x + dist * Math.sin(phi) * Math.sin(theta), N + dist * Math.cos(phi), z + dist * Math.sin(phi) * Math.cos(theta));
+    camera.lookAt(x, N + 0.8, z);
   }
   renderer.render(scene, camera);
   if (mode === 'maqueta') posaEtiquetes();
@@ -1210,9 +1278,14 @@ async function inici() {
   canviaPlanta(0);
   posaMode('passeig');
   anarA(P[0].vistes[0]);
-  // Enllaços directes: #cuina, #habitacio-2… i #maqueta o #maqueta-primera
+  // Enllaços directes: #cuina, #habitacio-2…, #maqueta o #maqueta-primera, i #dalt-bany-2 (una sala de dalt)
   const llegeixHash = () => {
     const h = location.hash.slice(1);
+    if (h.startsWith('dalt-')) {
+      const s = habs.find(s => 'dalt-' + slug(s.nom) === h);
+      if (s) { canviaPlanta(s.planta); posaMode('maqueta'); mida(); vistaSala(s, true); }
+      return;
+    }
     if (h.startsWith('maqueta')) {
       const i = P.findIndex(p => h === 'maqueta-' + slug(p.curt));
       if (i >= 0) canviaPlanta(i);
