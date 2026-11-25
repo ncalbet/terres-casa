@@ -4,7 +4,7 @@
 Per a cada casa de CASES, llegeix visor/plantilla.html, els JSON de les seves plantes, el seu fitxer de
 mobles (si en té) i visor/rajola-roure.jpg, i escriu la seva pàgina (un sol fitxer, sense dependències locals):
 - visor/casa.html: la casa de dues plantes (la de la dreta d'A12/A13), amb visor/mobles.txt.
-- visor/casa-2.html: la casa d'una planta (la de l'esquerra d'A12), sense mobles.
+- visor/casa-2.html: la casa d'una planta (la de l'esquerra d'A12), amb visor/mobles-casa-2.txt.
 
 El paquet per editar mobles (eines/fes_paquet.py) fa servir munta(extern=True) amb la casa de dues
 plantes: la pàgina no porta els mobles a dins sinó que llegeix mobles.txt, que ha d'estar al seu costat.
@@ -43,7 +43,7 @@ CASES = {
     "casa-2": {
         "pagina": "casa-2.html",
         "plantes": ["casa-2-planta.json"],
-        "mobles": None,
+        "mobles": VISOR / "mobles-casa-2.txt",
         "titol": "Terres de la casa d'una planta",
         "ullet": "Una planta · escala 1:50",
         "nota_m2": "Superfície útil aproximada de la casa, sense el pati, retalls ni sobrants.",
@@ -52,7 +52,7 @@ CASES = {
             "Mida de la peça suposada: 20 × 120 cm, col·locada a trencajunts amb junta de 2,5 mm.",
             "El roure fosc i el roure gris són la mateixa foto retocada, no rajoles reals.",
             "L'alçada del sostre i la de les finestres són suposades. La llar de foc és la del plànol, de terra a sostre.",
-            "No hi ha mobles: només les parets, les portes i les finestres del plànol.",
+            "Els mobles són els que dibuixa el plànol, amb mides aproximades i els colors dels de l'altra casa.",
         ],
         "peu": "Font: plànol A12 (cotes), casa de l'esquerra. Sostres a 2,70 m.",
         "altra": ("casa.html", "Veure la casa de dues plantes"),

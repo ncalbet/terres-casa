@@ -633,9 +633,10 @@ function construeixPlanta(p) {
   // Mobles (de mobles.txt): els que arrenquen de baix fan nosa per caminar, menys les catifes
   const cx = blocs[0].cx;
   for (const k of p.mobles) {
-    const me = cx(k.r, k.h[0], k.h[1], matMoble(k));
+    const B = blocs.find(b => b.d === (k.bloc || p));   // els d'un bloc girat, dins del seu grup
+    const me = B.cx(k.r, k.h[0], k.h[1], matMoble(k));
     if (me) me.userData.moble = k;
-    if (k.h[0] < 1.2 && k.h[1] > 0.1) p.obstacles.push(k.r);
+    if (k.h[0] < 1.2 && k.h[1] > 0.1) B.obs(k.r);
   }
   // Llar de foc, xemeneia i ampits
   for (const { d, grup, obs, cx } of blocs) {
@@ -727,8 +728,10 @@ function llegeixMobles() {
   const norm = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const esNum = t => /^[-+]?(\d+([.,]\d*)?|[.,]\d+)$/.test(t);
   const esColor = t => /^#([0-9a-f]{6}|[0-9a-f]{3})$/i.test(t);
-  const plantes = P.map(p => '[' + p.nom + ']').join(' o ');
-  let actual = null;
+  // Una secció és una planta o un bloc girat (els seus mobles van en les coordenades del bloc)
+  const seccions = P.flatMap(p => [{ p, bloc: null, noms: [p.nom, p.curt] }, ...(p.blocs || []).map(b => ({ p, bloc: b, noms: [b.nom] }))]);
+  const plantes = seccions.map(s => '[' + s.noms[0] + ']').join(' o ');
+  let actual = null, bloc = null;
   M.text.replace(/<\\\//g, '</').split('\n').forEach((brut, i) => {
     const linia = i + 1, l = brut.trim();      // el text comença a la línia 1, just després de mobles`
     if (!l || l.startsWith('#')) return;
@@ -737,7 +740,8 @@ function llegeixMobles() {
     const sec = l.match(/^\[(.+)\]$/);
     if (sec) {
       const n = norm(sec[1]);
-      actual = P.find(p => n === norm(p.nom) || n === norm(p.curt)) || null;
+      const s = seccions.find(s => s.noms.some(t => n === norm(t)));
+      actual = s ? s.p : null; bloc = s ? s.bloc : null;
       if (!actual) error(`no sé quina planta és. Ha de dir ${plantes}.`);
       return;
     }
@@ -758,9 +762,10 @@ function llegeixMobles() {
     const r = [Math.min(a, c), Math.min(b, d), Math.max(a, c), Math.max(b, d)], h = [Math.min(e, f), Math.max(e, f)];
     if (ns.some(v => Math.abs(v) > 30)) return error('hi ha un número massa gran. Les mides van en metres: 2.20, no 220.');
     if (r[2] - r[0] < 0.004 || r[3] - r[1] < 0.004 || h[1] - h[0] < 0.002) return error('la caixa no té gruix: x0 i x1, y0 i y1, o les dues alçades són iguals.');
-    if (r[0] < X0 - 3 || r[2] > X1 + 3 || r[1] < Y0 - 3 || r[3] > Y1 + 3) return error(`queda fora de la casa. La x va de ${X0} a ${X1} i la y de ${Y0} a ${Y1}.`);
+    const mon = bloc ? rectPts(r).map(q => marcBloc(bloc).mon(...q)) : [[r[0], r[1]], [r[2], r[3]]];
+    if (mon.some(([x, y]) => x < X0 - 3 || x > X1 + 3 || y < Y0 - 3 || y > Y1 + 3)) return error(bloc ? 'queda fora de la casa.' : `queda fora de la casa. La x va de ${X0} a ${X1} i la y de ${Y0} a ${Y1}.`);
     if (h[1] > actual.alcada + 0.3) avis(`arriba a ${h[1]} m i el sostre és a ${actual.alcada} m. Les alçades es compten des del terra de la planta.`);
-    actual.mobles.push({ nom, r, h, mat: m, color, linia, planta: actual.i });
+    actual.mobles.push({ nom, r, h, mat: m, color, linia, planta: actual.i, bloc });
   });
   return { errors, avisos };
 }
